@@ -4,25 +4,32 @@ import { mkdirSync, writeFileSync } from 'fs'
 const ACCENT = 'rgb(79,70,229)'
 const INK_ON_ACCENT = 'rgb(255,255,255)'
 
+// A geometric "S" built from an explicit stroked path (not a text glyph) so
+// it renders identically regardless of which fonts happen to be installed
+// wherever this script runs.
 function monogramSvg({ size, padding }) {
   const s = size
   const p = padding
   const inner = s - p * 2
-  const barW = inner * 0.22
-  const barH = inner * 0.78
-  const x0 = p + inner * 0.12
-  const y0 = p + (s - barH) / 2 - p
-  const topW = inner * 0.62
-  const midW = inner * 0.5
-  const armH = barW
+  const strokeW = inner * 0.24
+
+  // S-curve drawn in a 0-100 box, then scaled/translated into the padded
+  // inner square via the path transform below.
+  const sPath =
+    'M 78 18 C 62 6, 30 6, 22 24 C 14 42, 40 46, 50 48 C 62 50, 88 54, 80 74 C 72 92, 36 92, 20 80'
+  const scale = inner / 100
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">
   <rect width="${s}" height="${s}" fill="${ACCENT}"/>
-  <g fill="${INK_ON_ACCENT}">
-    <rect x="${x0}" y="${y0}" width="${barW}" height="${barH}" rx="${barW * 0.18}"/>
-    <rect x="${x0}" y="${y0}" width="${topW}" height="${armH}" rx="${armH * 0.18}"/>
-    <rect x="${x0}" y="${y0 + barH * 0.42}" width="${midW}" height="${armH}" rx="${armH * 0.18}"/>
-  </g>
+  <path
+    d="${sPath}"
+    transform="translate(${p} ${p}) scale(${scale})"
+    fill="none"
+    stroke="${INK_ON_ACCENT}"
+    stroke-width="${strokeW / scale}"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
 </svg>`
 }
 

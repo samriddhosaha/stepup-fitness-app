@@ -34,7 +34,7 @@ export default function Guide() {
       >
         <ChevronLeft size={18} /> Back
       </button>
-      <h1 className="font-display text-2xl mb-6">How Forge works</h1>
+      <h1 className="font-display text-2xl mb-6">How StepUp works</h1>
       <div className="space-y-6">
         {SECTIONS.map((s) => (
           <div key={s.title}>

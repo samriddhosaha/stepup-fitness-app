@@ -8,7 +8,7 @@ import {
 } from 'react'
 import type { Appearance } from '../db/types'
 
-const STORAGE_KEY = 'forge-appearance'
+const STORAGE_KEY = 'stepup-appearance'
 
 function readCachedAppearance(): Appearance {
   if (typeof localStorage === 'undefined') return 'system'

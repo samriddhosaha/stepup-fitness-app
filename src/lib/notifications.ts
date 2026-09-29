@@ -45,8 +45,8 @@ export async function runReminderChecks(params: {
 
   const hour = new Date().getHours()
 
-  if (params.yesterdayScheduledAndMissed && !alreadyNotifiedToday('forge-notified-missed')) {
-    markNotifiedToday('forge-notified-missed')
+  if (params.yesterdayScheduledAndMissed && !alreadyNotifiedToday('stepup-notified-missed')) {
+    markNotifiedToday('stepup-notified-missed')
     await notify(
       'Yesterday’s session is still open',
       'No pressure — logging it late still counts, or just move on to today.',
@@ -57,9 +57,9 @@ export async function runReminderChecks(params: {
     params.todayScheduledAndIncomplete &&
     params.streak > 0 &&
     hour >= 18 &&
-    !alreadyNotifiedToday('forge-notified-streak')
+    !alreadyNotifiedToday('stepup-notified-streak')
   ) {
-    markNotifiedToday('forge-notified-streak')
+    markNotifiedToday('stepup-notified-streak')
     await notify(
       'Still time today',
       `Your ${params.streak}-session streak is waiting on today's workout.`,

@@ -10,7 +10,7 @@ import type {
   AppEvent,
 } from './types'
 
-export class ForgeDB extends Dexie {
+export class StepUpDB extends Dexie {
   profile!: EntityTable<Profile, 'id'>
   plans!: EntityTable<Plan, 'id'>
   exercises!: EntityTable<Exercise, 'id'>
@@ -21,7 +21,7 @@ export class ForgeDB extends Dexie {
   appEvents!: EntityTable<AppEvent, 'id'>
 
   constructor() {
-    super('forge-db')
+    super('stepup-db')
 
     this.version(1).stores({
       profile: '++id, createdAt',
@@ -36,7 +36,7 @@ export class ForgeDB extends Dexie {
   }
 }
 
-export const db = new ForgeDB()
+export const db = new StepUpDB()
 
 export async function getActiveProfile(): Promise<Profile | undefined> {
   return db.profile.orderBy('createdAt').last()

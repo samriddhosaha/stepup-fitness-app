@@ -104,7 +104,7 @@ const RANKS: { minLevel: number; name: string }[] = [
   { minLevel: 10, name: 'Disciplined' },
   { minLevel: 20, name: 'Seasoned' },
   { minLevel: 35, name: 'Relentless' },
-  { minLevel: 50, name: 'Forged' },
+  { minLevel: 50, name: 'Summit' },
 ]
 
 export function rankForLevel(level: number): string {

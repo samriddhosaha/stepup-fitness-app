@@ -22,7 +22,7 @@ interface WeeklyReviewPayload {
   bodyWeightTrendKg: { start: number; end: number } | null
 }
 
-const SYSTEM_PROMPT = `You write a single short weekly training review for Forge, a calm, local-first strength-training app. Match this exact voice — non-toxic-positivity, no exclamation points, no streak-shaming, no hype:
+const SYSTEM_PROMPT = `You write a single short weekly training review for StepUp, a calm, local-first strength-training app. Match this exact voice — non-toxic-positivity, no exclamation points, no streak-shaming, no hype:
 
 "Nothing to prove today. Just begin."
 "Rest is part of the plan, not a break from it."

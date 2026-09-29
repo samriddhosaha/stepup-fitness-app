@@ -7,7 +7,7 @@ export default function Welcome() {
   return (
     <div className="flex-1 flex flex-col justify-between py-10">
       <div>
-        <p className="font-display text-4xl leading-tight mb-4">Forge</p>
+        <p className="font-display text-4xl leading-tight mb-4">StepUp</p>
         <p className="text-lg text-ink/80 max-w-sm">
           A personal trainer that lives in your phone.
         </p>
@@ -19,7 +19,7 @@ export default function Welcome() {
         </p>
         <p className="text-sm text-faint max-w-sm">
           Your data — it stays on this device. No account, no email, nothing
-          to sign up for. Forge builds your plan from a few questions and
+          to sign up for. StepUp builds your plan from a few questions and
           keeps everything local from there.
         </p>
       </div>

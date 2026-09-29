@@ -140,7 +140,7 @@ export default function Dashboard() {
           Full history →
         </Link>
         <Link to="/guide" className="text-sm text-accent">
-          How Forge works →
+          How StepUp works →
         </Link>
       </div>
     </div>

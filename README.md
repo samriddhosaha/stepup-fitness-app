@@ -1,8 +1,8 @@
-# Forge
+# StepUp
 
 A personal trainer that lives in your phone. Fully local-first strength-training tracker — no account, no server, no data leaving the device unless you explicitly opt in.
 
-Rebuilt per `FORGE_AUDIT.md` and `BUILD_GUIDE.md` (see the parent directory).
+Rebuilt per `FORGE_AUDIT.md` and `BUILD_GUIDE.md` (see the parent directory) — those docs predate the StepUp rename and still refer to the app by its original working name, "Forge."
 
 ## Stack
 

@@ -1,8 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
   <rect width="64" height="64" fill="rgb(79,70,229)"/>
-  <g fill="rgb(255,255,255)">
-    <rect x="16.4352" y="16.025599999999997" width="9.0112" height="31.948800000000002" rx="1.6220160000000001"/>
-    <rect x="16.4352" y="16.025599999999997" width="25.3952" height="9.0112" rx="1.6220160000000001"/>
-    <rect x="16.4352" y="29.444096" width="20.48" height="9.0112" rx="1.6220160000000001"/>
-  </g>
+  <path
+    d="M 78 18 C 62 6, 30 6, 22 24 C 14 42, 40 46, 50 48 C 62 50, 88 54, 80 74 C 72 92, 36 92, 20 80"
+    transform="translate(11.52 11.52) scale(0.4096)"
+    fill="none"
+    stroke="rgb(255,255,255)"
+    stroke-width="23.999999999999996"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
 </svg>

@@ -159,7 +159,7 @@ export default function Profile() {
       </Card>
 
       <Link to="/guide" className="block text-sm text-accent">
-        How Forge works
+        How StepUp works
       </Link>
 
       <Card className="border-danger/30">

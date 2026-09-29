@@ -33,7 +33,7 @@ export async function exportAllData(): Promise<void> {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `forge-backup-${new Date().toISOString().slice(0, 10)}.json`
+  a.download = `stepup-backup-${new Date().toISOString().slice(0, 10)}.json`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -42,7 +42,7 @@ export async function importAllData(file: File): Promise<void> {
   const text = await file.text()
   const payload = JSON.parse(text) as BackupPayload
   if (payload.version !== 1 || !payload.tables) {
-    throw new Error('This file doesn’t look like a Forge backup.')
+    throw new Error('This file doesn’t look like a StepUp backup.')
   }
 
   await db.transaction(

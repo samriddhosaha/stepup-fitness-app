@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
-        name: 'Forge',
-        short_name: 'Forge',
+        name: 'StepUp',
+        short_name: 'StepUp',
         description: 'A personal trainer that lives in your phone.',
         theme_color: '#faf9f7',
         background_color: '#faf9f7',
