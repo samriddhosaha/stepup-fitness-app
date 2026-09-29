@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
 import { generatePlan } from '../lib/plan'
-import { Button, Card, PillChip, TextField } from '../components/ui'
+import { Button, Card, Chip, TextField } from '../components/ui'
 import type { Equipment, FitnessLevel, PrimaryGoal, Profile, TrainingPreference } from '../db/types'
 
 const FITNESS_LEVELS: { value: FitnessLevel; label: string }[] = [
@@ -75,7 +75,7 @@ export default function ProfileEdit() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <h1 className="font-display text-2xl mb-6">Edit preferences</h1>
+      <h1 className="font-display font-bold text-2xl md:text-3xl mb-6">Edit preferences</h1>
 
       <div className="flex-1 space-y-6 overflow-y-auto">
         <TextField
@@ -85,39 +85,39 @@ export default function ProfileEdit() {
         />
 
         <div>
-          <p className="text-sm font-medium mb-2">Fitness level</p>
+          <p className="label-eyebrow text-faint mb-2">Fitness level</p>
           <div className="flex flex-col gap-2">
             {FITNESS_LEVELS.map((opt) => (
-              <PillChip
+              <Chip
                 key={opt.value}
                 active={draft.fitnessLevel === opt.value}
                 onClick={() => setDraft({ ...draft, fitnessLevel: opt.value })}
                 className="justify-start! text-left px-5"
               >
                 {opt.label}
-              </PillChip>
+              </Chip>
             ))}
           </div>
         </div>
 
         <div>
-          <p className="text-sm font-medium mb-2">Primary goal</p>
+          <p className="label-eyebrow text-faint mb-2">Primary goal</p>
           <div className="flex flex-col gap-2">
             {GOALS.map((opt) => (
-              <PillChip
+              <Chip
                 key={opt.value}
                 active={draft.primaryGoal === opt.value}
                 onClick={() => setDraft({ ...draft, primaryGoal: opt.value })}
                 className="justify-start! text-left px-5"
               >
                 {opt.label}
-              </PillChip>
+              </Chip>
             ))}
           </div>
         </div>
 
         <div>
-          <p className="text-sm font-medium mb-2">Days per week: {draft.daysPerWeek}</p>
+          <p className="label-eyebrow text-faint mb-2">Days per week: {draft.daysPerWeek}</p>
           <input
             type="range"
             aria-label="Days per week"
@@ -130,7 +130,7 @@ export default function ProfileEdit() {
         </div>
 
         <div>
-          <p className="text-sm font-medium mb-2">Session length: {draft.sessionLengthMinutes} min</p>
+          <p className="label-eyebrow text-faint mb-2">Session length: {draft.sessionLengthMinutes} min</p>
           <input
             type="range"
             aria-label="Session length in minutes"
@@ -144,10 +144,10 @@ export default function ProfileEdit() {
         </div>
 
         <div>
-          <p className="text-sm font-medium mb-2">Equipment</p>
+          <p className="label-eyebrow text-faint mb-2">Equipment</p>
           <div className="flex flex-col gap-2">
             {EQUIPMENT_OPTIONS.map((opt) => (
-              <PillChip
+              <Chip
                 key={opt.value}
                 active={draft.equipment.includes(opt.value)}
                 onClick={() =>
@@ -156,16 +156,16 @@ export default function ProfileEdit() {
                 className="justify-start! text-left px-5"
               >
                 {opt.label}
-              </PillChip>
+              </Chip>
             ))}
           </div>
         </div>
 
         <div>
-          <p className="text-sm font-medium mb-2">Training preferences</p>
+          <p className="label-eyebrow text-faint mb-2">Training preferences</p>
           <div className="flex flex-wrap gap-2">
             {PREFERENCE_OPTIONS.map((opt) => (
-              <PillChip
+              <Chip
                 key={opt.value}
                 active={draft.trainingPreferences.includes(opt.value)}
                 onClick={() =>
@@ -176,23 +176,23 @@ export default function ProfileEdit() {
                 }
               >
                 {opt.label}
-              </PillChip>
+              </Chip>
             ))}
           </div>
         </div>
 
         <label className="block">
-          <span className="block text-sm font-medium mb-1.5">Exclusions</span>
+          <span className="label-eyebrow block text-faint mb-2">Exclusions</span>
           <textarea
-            className="w-full rounded-xl border border-line bg-elevated px-4 py-3 min-h-20"
+            className="w-full rounded-sm border-2 border-ink bg-elevated px-4 py-3 min-h-20"
             value={draft.exclusions ?? ''}
             onChange={(e) => setDraft({ ...draft, exclusions: e.target.value })}
           />
         </label>
         <label className="block">
-          <span className="block text-sm font-medium mb-1.5">Injuries</span>
+          <span className="label-eyebrow block text-faint mb-2">Injuries</span>
           <textarea
-            className="w-full rounded-xl border border-line bg-elevated px-4 py-3 min-h-20"
+            className="w-full rounded-sm border-2 border-ink bg-elevated px-4 py-3 min-h-20"
             value={draft.injuries ?? ''}
             onChange={(e) => setDraft({ ...draft, injuries: e.target.value })}
           />
@@ -201,7 +201,7 @@ export default function ProfileEdit() {
 
       {showRebuildChoice ? (
         <Card className="mt-4">
-          <p className="font-medium mb-2">Update your plan too?</p>
+          <p className="font-bold mb-2">Update your plan too?</p>
           <p className="text-sm text-faint mb-4">
             These changes affect what your plan can include. Rebuild it to
             match, or keep your current plan as-is.

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
-import { Button, PillChip, StepProgress, TextField } from '../components/ui'
+import { Button, Chip, StepProgress, TextField } from '../components/ui'
 import { db } from '../db/schema'
 import { generatePlan } from '../lib/plan'
 import { track } from '../lib/analytics'
@@ -172,7 +172,7 @@ export default function Onboarding() {
           <button
             aria-label="Previous step"
             onClick={() => setStep((s) => s - 1)}
-            className="min-h-12 min-w-12 flex items-center justify-center rounded-full hover:bg-hairline"
+            className="min-h-12 min-w-12 flex items-center justify-center border-2 border-ink hover:bg-hairline/40"
           >
             <ChevronLeft size={22} />
           </button>
@@ -216,16 +216,16 @@ export default function Onboarding() {
                 }
               />
               <div>
-                <span className="block text-sm font-medium text-ink mb-1.5">Sex</span>
+                <span className="label-eyebrow block text-faint mb-2">Sex</span>
                 <div className="flex gap-2 flex-wrap">
                   {(['female', 'male', 'unspecified'] as Sex[]).map((s) => (
-                    <PillChip
+                    <Chip
                       key={s}
                       active={draft.sex === s}
                       onClick={() => setDraft((d) => ({ ...d, sex: s }))}
                     >
                       {s === 'unspecified' ? 'Prefer not to say' : s}
-                    </PillChip>
+                    </Chip>
                   ))}
                 </div>
               </div>
@@ -269,14 +269,14 @@ export default function Onboarding() {
           <StepBlock title="How would you describe where you're starting from?">
             <div className="flex flex-col gap-3">
               {FITNESS_LEVELS.map((opt) => (
-                <PillChip
+                <Chip
                   key={opt.value}
                   active={draft.fitnessLevel === opt.value}
                   onClick={() => setDraft((d) => ({ ...d, fitnessLevel: opt.value }))}
                   className="justify-start! text-left px-5"
                 >
                   {opt.label}
-                </PillChip>
+                </Chip>
               ))}
             </div>
           </StepBlock>
@@ -285,14 +285,14 @@ export default function Onboarding() {
         {step === 4 && (
           <StepBlock title="What are you already doing?">
             <div className="flex flex-col gap-3">
-              <PillChip
+              <Chip
                 active={draft.liftsAlready}
                 onClick={() => setDraft((d) => ({ ...d, liftsAlready: !d.liftsAlready }))}
                 className="justify-start! text-left px-5"
               >
                 I already lift weights
-              </PillChip>
-              <PillChip
+              </Chip>
+              <Chip
                 active={draft.doesCardioAlready}
                 onClick={() =>
                   setDraft((d) => ({ ...d, doesCardioAlready: !d.doesCardioAlready }))
@@ -300,30 +300,30 @@ export default function Onboarding() {
                 className="justify-start! text-left px-5"
               >
                 I already do cardio
-              </PillChip>
+              </Chip>
             </div>
           </StepBlock>
         )}
 
         {step === 5 && (
           <StepBlock title="What matters most right now?">
-            <p className="text-xs text-faint mb-3">Primary goal</p>
+            <p className="label-eyebrow text-faint mb-3">Primary goal</p>
             <div className="flex flex-col gap-3 mb-6">
               {GOALS.map((opt) => (
-                <PillChip
+                <Chip
                   key={opt.value}
                   active={draft.primaryGoal === opt.value}
                   onClick={() => setDraft((d) => ({ ...d, primaryGoal: opt.value }))}
                   className="justify-start! text-left px-5"
                 >
                   {opt.label}
-                </PillChip>
+                </Chip>
               ))}
             </div>
-            <p className="text-xs text-faint mb-3">Secondary goal (optional)</p>
+            <p className="label-eyebrow text-faint mb-3">Secondary goal (optional)</p>
             <div className="flex flex-col gap-3">
               {GOALS.filter((g) => g.value !== draft.primaryGoal).map((opt) => (
-                <PillChip
+                <Chip
                   key={opt.value}
                   active={draft.secondaryGoal === opt.value}
                   onClick={() =>
@@ -335,7 +335,7 @@ export default function Onboarding() {
                   className="justify-start! text-left px-5"
                 >
                   {opt.label}
-                </PillChip>
+                </Chip>
               ))}
             </div>
           </StepBlock>
@@ -344,7 +344,7 @@ export default function Onboarding() {
         {step === 6 && (
           <StepBlock title="How much time do you realistically have?">
             <div className="mb-6">
-              <span className="block text-sm font-medium text-ink mb-2">
+              <span className="label-eyebrow block text-faint mb-2">
                 Days per week: {draft.daysPerWeek}
               </span>
               <input
@@ -360,7 +360,7 @@ export default function Onboarding() {
               />
             </div>
             <div>
-              <span className="block text-sm font-medium text-ink mb-2">
+              <span className="label-eyebrow block text-faint mb-2">
                 Typical session length: {draft.sessionLengthMinutes} min
               </span>
               <input
@@ -383,7 +383,7 @@ export default function Onboarding() {
           <StepBlock title="What do you have access to?">
             <div className="flex flex-col gap-3">
               {EQUIPMENT_OPTIONS.map((opt) => (
-                <PillChip
+                <Chip
                   key={opt.value}
                   active={draft.equipment.includes(opt.value)}
                   onClick={() =>
@@ -392,7 +392,7 @@ export default function Onboarding() {
                   className="justify-start! text-left px-5"
                 >
                   {opt.label}
-                </PillChip>
+                </Chip>
               ))}
             </div>
           </StepBlock>
@@ -405,7 +405,7 @@ export default function Onboarding() {
             </p>
             <div className="flex flex-wrap gap-2">
               {PREFERENCE_OPTIONS.map((opt) => (
-                <PillChip
+                <Chip
                   key={opt.value}
                   active={draft.trainingPreferences.includes(opt.value)}
                   onClick={() =>
@@ -416,7 +416,7 @@ export default function Onboarding() {
                   }
                 >
                   {opt.label}
-                </PillChip>
+                </Chip>
               ))}
             </div>
           </StepBlock>
@@ -426,22 +426,22 @@ export default function Onboarding() {
           <StepBlock title="Anything to work around?">
             <div className="flex flex-col gap-4">
               <label className="block">
-                <span className="block text-sm font-medium text-ink mb-1.5">
+                <span className="label-eyebrow block text-faint mb-2">
                   Anything you'd rather not do
                 </span>
                 <textarea
-                  className="w-full rounded-xl border border-line bg-elevated px-4 py-3 text-ink min-h-24 focus:outline-2 focus:outline-accent"
+                  className="w-full rounded-sm border-2 border-ink bg-elevated px-4 py-3 text-ink min-h-24 focus:outline-2 focus:outline-accent"
                   value={draft.exclusions}
                   onChange={(e) => setDraft((d) => ({ ...d, exclusions: e.target.value }))}
                 />
               </label>
               <label className="block">
-                <span className="block text-sm font-medium text-ink mb-1.5">
+                <span className="block text-sm font-bold text-ink mb-2">
                   Injuries or anything else we should work around — we'll
                   leave these out of your plan entirely.
                 </span>
                 <textarea
-                  className="w-full rounded-xl border border-line bg-elevated px-4 py-3 text-ink min-h-24 focus:outline-2 focus:outline-accent"
+                  className="w-full rounded-sm border-2 border-ink bg-elevated px-4 py-3 text-ink min-h-24 focus:outline-2 focus:outline-accent"
                   value={draft.injuries}
                   onChange={(e) => setDraft((d) => ({ ...d, injuries: e.target.value }))}
                 />
@@ -469,7 +469,7 @@ export default function Onboarding() {
 function StepBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <h1 className="font-display text-2xl mb-6">{title}</h1>
+      <h1 className="font-display font-bold text-2xl md:text-3xl mb-6">{title}</h1>
       {children}
     </div>
   )

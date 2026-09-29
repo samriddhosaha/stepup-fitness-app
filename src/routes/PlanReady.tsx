@@ -10,7 +10,7 @@ export default function PlanReady() {
   return (
     <div className="flex-1 flex flex-col justify-between py-10">
       <div>
-        <p className="font-display text-3xl leading-tight mb-4">
+        <p className="font-display font-bold text-4xl leading-none mb-4">
           Your plan is ready.
         </p>
         <p className="text-faint">
@@ -21,15 +21,15 @@ export default function PlanReady() {
       {plan && (
         <div className="space-y-3">
           {plan.sessions.map((s) => (
-            <div key={s.name + s.dayIndex} className="rounded-xl border border-hairline bg-elevated px-4 py-3">
-              <p className="font-medium">{s.name}</p>
+            <div key={s.name + s.dayIndex} className="border-2 border-ink bg-elevated px-4 py-3">
+              <p className="font-bold">{s.name}</p>
               <p className="text-xs text-faint">{s.exercises.length} exercises</p>
             </div>
           ))}
         </div>
       )}
 
-      <Button className="w-full" onClick={() => navigate('/dashboard')}>
+      <Button className="w-full md:w-auto" onClick={() => navigate('/dashboard')}>
         See my plan
       </Button>
     </div>

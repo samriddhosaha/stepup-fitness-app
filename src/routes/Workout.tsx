@@ -26,7 +26,7 @@ export default function Workout() {
     return (
       <div className="flex-1 flex flex-col justify-between py-10">
         <div>
-          <p className="font-display text-2xl mb-2">Nothing scheduled.</p>
+          <p className="font-display font-bold text-3xl mb-2">Nothing scheduled.</p>
           <p className="text-faint">A rest day.</p>
           <p className="text-sm text-faint mt-4">
             Rest is part of the plan, not a break from it.
@@ -35,7 +35,7 @@ export default function Workout() {
         <div className="space-y-3">
           {plan.sessions.map((s) => (
             <Card key={s.name + s.dayIndex}>
-              <p className="font-medium mb-2">{s.name}</p>
+              <p className="font-bold mb-2">{s.name}</p>
               <Button variant="secondary" className="w-full" onClick={() => begin(s)}>
                 Train anyway
               </Button>
@@ -49,17 +49,17 @@ export default function Workout() {
   return (
     <div className="flex-1 flex flex-col justify-between py-10">
       <div>
-        <p className="font-display text-2xl mb-2">{todays.name}</p>
+        <p className="font-display font-bold text-3xl mb-2">{todays.name}</p>
         <p className="text-faint">Nothing to prove today. Just begin.</p>
       </div>
 
-      <div className="space-y-2 my-6">
+      <div className="my-6">
         {todays.exercises.map((pe) => {
           const exercise = getExerciseById(pe.exerciseId)
           const hasWarmup = Boolean(exercise?.warmupRamp)
           return (
             <div key={pe.exerciseId} className="flex justify-between items-center text-sm py-2 border-b border-hairline">
-              <span>{exercise?.name}</span>
+              <span className="font-bold">{exercise?.name}</span>
               <span className="text-faint">
                 {hasWarmup && 'Warm-up + '}
                 {pe.targetSets} × {pe.targetRepsLow}-{pe.targetRepsHigh}
@@ -69,7 +69,7 @@ export default function Workout() {
         })}
       </div>
 
-      <Button className="w-full" onClick={() => begin(todays)}>
+      <Button className="w-full md:w-auto" onClick={() => begin(todays)}>
         Start workout
       </Button>
     </div>

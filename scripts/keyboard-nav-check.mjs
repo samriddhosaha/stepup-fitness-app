@@ -94,13 +94,14 @@ await page.click('text=Continue')
 await page.click('text=Build my plan')
 await page.waitForSelector('text=Your plan is ready.')
 await page.click('text=See my plan')
-await page.waitForSelector('text=Home')
+await page.waitForURL('**/dashboard')
 await page.locator('button:has-text("Start workout"), button:has-text("Train anyway")').first().click()
-await page.waitForTimeout(400)
-if (!(await page.locator('text=Exercise 1 of').isVisible().catch(() => false))) {
+await page.waitForURL(/\/workout(\/active)?$/, { timeout: 5000 })
+if (!page.url().includes('/workout/active')) {
   await page.locator('button:has-text("Start workout"), button:has-text("Train anyway")').first().click()
+  await page.waitForURL('**/workout/active', { timeout: 5000 })
 }
-await page.waitForSelector('text=Exercise 1 of')
+await page.waitForSelector('text=Exercise 1 /')
 
 const workoutResult = await checkTabOrderCoversAllControls('/workout/active')
 

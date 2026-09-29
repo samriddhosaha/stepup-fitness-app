@@ -65,7 +65,7 @@ await page.waitForSelector('text=Your plan is ready.', { timeout: 15000 })
 await shot('03-plan-ready')
 await page.click('text=See my plan')
 
-await page.waitForSelector('text=Home', { timeout: 15000 })
+await page.waitForURL('**/dashboard', { timeout: 15000 })
 await shot('04-dashboard')
 
 // Start workout from dashboard. If today is a rest day, the dashboard's
@@ -77,7 +77,7 @@ const dashboardStart = page.locator(
 await dashboardStart.first().click()
 await page.waitForTimeout(500)
 
-if (!(await page.locator('text=Exercise 1 of').isVisible().catch(() => false))) {
+if (!(await page.locator('text=Exercise 1 /').isVisible().catch(() => false))) {
   await shot('04b-workout-overview')
   const sessionStart = page.locator(
     'button:has-text("Start workout"), button:has-text("Train anyway")',
@@ -85,7 +85,7 @@ if (!(await page.locator('text=Exercise 1 of').isVisible().catch(() => false))) 
   await sessionStart.first().click()
 }
 
-await page.waitForSelector('text=Exercise 1 of', { timeout: 15000 })
+await page.waitForSelector('text=Exercise 1 /', { timeout: 15000 })
 await shot('05-workout-active')
 
 // Log a set

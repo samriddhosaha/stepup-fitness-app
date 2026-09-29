@@ -32,16 +32,16 @@ async function onboard() {
   await page.click('text=Build my plan')
   await page.waitForSelector('text=Your plan is ready.')
   await page.click('text=See my plan')
-  await page.waitForSelector('text=Home')
+  await page.waitForURL('**/dashboard')
 }
 
 async function beginWorkout() {
   await page.locator('button:has-text("Start workout"), button:has-text("Train anyway")').first().click()
   await page.waitForTimeout(400)
-  if (!(await page.locator('text=Exercise 1 of').isVisible().catch(() => false))) {
+  if (!(await page.locator('text=Exercise 1 /').isVisible().catch(() => false))) {
     await page.locator('button:has-text("Start workout"), button:has-text("Train anyway")').first().click()
   }
-  await page.waitForSelector('text=Exercise 1 of')
+  await page.waitForSelector('text=Exercise 1 /')
 }
 
 async function completeExercise() {
@@ -76,7 +76,7 @@ await page.waitForSelector('text=Workout complete.', { timeout: 10000 })
 await shot('12-workout-complete')
 
 await page.click('text=Back to dashboard')
-await page.waitForSelector('text=Home')
+await page.waitForURL('**/dashboard')
 await shot('13-dashboard-after')
 
 await page.goto('http://localhost:5173/progress/xp')

@@ -18,36 +18,38 @@ export default function Plan() {
   const sorted = [...plan.sessions].sort((a, b) => a.dayIndex - b.dayIndex)
 
   return (
-    <div className="space-y-4">
-      <h1 className="font-display text-2xl">Your plan</h1>
+    <div>
+      <h1 className="font-display font-bold text-3xl md:text-4xl mb-6">Your plan</h1>
 
       {plan.volumeUneven && (
-        <div className="rounded-xl bg-warning/10 border border-warning/30 px-4 py-3 text-sm">
+        <div className="border-2 border-ink bg-warning/10 px-4 py-3 text-sm font-bold mb-6">
           Pushing and pulling volume are uneven in this plan.
         </div>
       )}
 
-      {sorted.map((session) => (
-        <Card key={session.name + session.dayIndex}>
-          <p className="text-xs text-faint mb-1">{DAY_NAMES[session.dayIndex]}</p>
-          <p className="font-display text-lg mb-3">{session.name}</p>
-          <ul className="space-y-1.5">
-            {session.exercises.map((pe) => {
-              const exercise = getExerciseById(pe.exerciseId)
-              return (
-                <li key={pe.exerciseId} className="flex justify-between text-sm">
-                  <span>{exercise?.name ?? pe.exerciseId}</span>
-                  <span className="text-faint">
-                    {pe.targetSets} × {pe.targetRepsLow}-{pe.targetRepsHigh}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        </Card>
-      ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {sorted.map((session) => (
+          <Card key={session.name + session.dayIndex}>
+            <p className="label-eyebrow text-faint mb-1">{DAY_NAMES[session.dayIndex]}</p>
+            <p className="font-display font-bold text-lg mb-3">{session.name}</p>
+            <ul className="space-y-1.5">
+              {session.exercises.map((pe) => {
+                const exercise = getExerciseById(pe.exerciseId)
+                return (
+                  <li key={pe.exerciseId} className="flex justify-between text-sm">
+                    <span>{exercise?.name ?? pe.exerciseId}</span>
+                    <span className="text-faint">
+                      {pe.targetSets} × {pe.targetRepsLow}-{pe.targetRepsHigh}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          </Card>
+        ))}
+      </div>
 
-      <Link to="/profile/edit" className="block text-center text-sm text-accent mt-2">
+      <Link to="/profile/edit" className="block text-center text-sm font-bold text-accent mt-6">
         Edit training preferences
       </Link>
     </div>

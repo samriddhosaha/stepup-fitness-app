@@ -27,7 +27,7 @@ async function onboard() {
   await page.click('text=Build my plan')
   await page.waitForSelector('text=Your plan is ready.')
   await page.click('text=See my plan')
-  await page.waitForSelector('text=Home')
+  await page.waitForURL('**/dashboard')
 }
 
 async function runAxe(label) {
@@ -79,11 +79,14 @@ for (const route of routes) {
 await page.goto(`${BASE}/dashboard`)
 await page.waitForTimeout(300)
 await page.locator('button:has-text("Start workout"), button:has-text("Train anyway")').first().click()
-await page.waitForTimeout(400)
-if (!(await page.locator('text=Exercise 1 of').isVisible().catch(() => false))) {
+await page.waitForURL(/\/workout(\/active)?$/, { timeout: 5000 })
+if (!page.url().includes('/workout/active')) {
+  // Landed on the /workout overview (rest-day case) instead of straight
+  // into the session — its own start button needs a second click.
   await page.locator('button:has-text("Start workout"), button:has-text("Train anyway")').first().click()
+  await page.waitForURL('**/workout/active', { timeout: 5000 })
 }
-await page.waitForSelector('text=Exercise 1 of')
+await page.waitForSelector('text=Exercise 1 /')
 allViolations['/workout/active'] = await runAxe('/workout/active')
 
 const totalCritical = Object.values(allViolations)

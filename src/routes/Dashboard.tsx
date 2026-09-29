@@ -76,72 +76,85 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-faint">
-        {greetingForNow()}{profile?.name ? `, ${profile.name}` : ''}
+    <div>
+      <p className="text-sm text-faint mb-6">
+        {greetingForNow()}
+        {profile?.name ? `, ${profile.name}` : ''}
       </p>
 
-      <Card>
-        {todays ? (
-          <>
-            <p className="font-display text-xl mb-1">{todays.name}</p>
-            <p className="text-sm text-faint mb-4">Nothing to prove today. Just begin.</p>
-            <Button className="w-full" onClick={begin}>
-              Start workout
-            </Button>
-          </>
-        ) : (
-          <>
-            <p className="font-display text-xl mb-1">Nothing scheduled.</p>
-            <p className="text-sm text-faint mb-4">A rest day.</p>
-            <Button variant="secondary" className="w-full" onClick={() => navigate('/workout')}>
-              Train anyway
-            </Button>
-          </>
-        )}
-      </Card>
+      <div className="md:grid md:grid-cols-3 md:gap-8 space-y-6 md:space-y-0">
+        {/* Main column */}
+        <div className="md:col-span-2 space-y-6">
+          <Card>
+            {todays ? (
+              <>
+                <p className="font-display font-bold text-2xl mb-1">{todays.name}</p>
+                <p className="text-sm text-faint mb-4">Nothing to prove today. Just begin.</p>
+                <Button className="w-full md:w-auto" onClick={begin}>
+                  Start workout
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="font-display font-bold text-2xl mb-1">Nothing scheduled.</p>
+                <p className="text-sm text-faint mb-4">A rest day.</p>
+                <Button
+                  variant="secondary"
+                  className="w-full md:w-auto"
+                  onClick={() => navigate('/workout')}
+                >
+                  Train anyway
+                </Button>
+              </>
+            )}
+          </Card>
 
-      {streak > 0 && (
-        <p className="text-sm text-faint">
-          <span className="text-ink font-medium">{streak}</span> session streak
-        </p>
-      )}
-
-      <div>
-        <p className="text-xs text-faint mb-2">This week</p>
-        <WeekDots done={doneThisWeek} planned={activePlan.sessions.length} />
-      </div>
-
-      {latestPR && (
-        <Card className="bg-accent-soft border-none">
-          <p className="text-sm font-medium">
-            New personal best — {getExerciseById(latestPR.exerciseId)?.name}
-          </p>
-        </Card>
-      )}
-
-      {recap && (
-        <div>
-          <p className="text-xs text-faint mb-2">This week, in short</p>
-          {recapIsFallback && (
-            <p className="text-xs text-faint mb-1">
-              AI review unavailable this week — here's your recap instead.
-            </p>
+          {recap && (
+            <Card>
+              <p className="label-eyebrow text-faint mb-2">This week, in short</p>
+              {recapIsFallback && (
+                <p className="text-xs text-faint mb-2">
+                  AI review unavailable this week — here's your recap instead.
+                </p>
+              )}
+              <p className="text-sm">{recap}</p>
+            </Card>
           )}
-          <p className="text-sm">{recap}</p>
         </div>
-      )}
 
-      <div className="flex flex-col gap-2 pt-2">
-        <Link to="/progress/xp" className="text-sm text-accent">
-          XP & level →
-        </Link>
-        <Link to="/history" className="text-sm text-accent">
-          Full history →
-        </Link>
-        <Link to="/guide" className="text-sm text-accent">
-          How StepUp works →
-        </Link>
+        {/* Side column */}
+        <div className="space-y-6">
+          {streak > 0 && (
+            <Card>
+              <p className="label-eyebrow text-faint mb-1">Streak</p>
+              <p className="font-display font-bold text-3xl">{streak}</p>
+            </Card>
+          )}
+
+          <Card>
+            <p className="label-eyebrow text-faint mb-3">This week</p>
+            <WeekDots done={doneThisWeek} planned={activePlan.sessions.length} />
+          </Card>
+
+          {latestPR && (
+            <Card className="bg-accent-soft">
+              <p className="label-eyebrow text-faint mb-1">New personal best</p>
+              <p className="text-sm font-bold">{getExerciseById(latestPR.exerciseId)?.name}</p>
+            </Card>
+          )}
+
+          <div className="flex flex-col gap-2 pt-2">
+            <Link to="/progress/xp" className="text-sm font-bold text-accent">
+              XP & level →
+            </Link>
+            <Link to="/history" className="text-sm font-bold text-accent">
+              Full history →
+            </Link>
+            <Link to="/guide" className="text-sm font-bold text-accent">
+              How StepUp works →
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -8,25 +8,23 @@ export function Button({
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
 }) {
   const base =
-    'inline-flex items-center justify-center gap-2 rounded-pill px-6 min-h-12 text-[0.95rem] font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none'
+    'brutal-press inline-flex items-center justify-center gap-2 rounded-sm border-2 border-ink px-6 min-h-12 text-[0.95rem] font-bold transition-colors disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none'
   const variants: Record<string, string> = {
-    primary: 'bg-accent text-white hover:opacity-90',
-    secondary: 'bg-accent-soft text-accent hover:opacity-90',
-    ghost: 'bg-transparent text-ink border border-line hover:bg-hairline',
-    danger: 'bg-danger text-white hover:opacity-90',
+    primary: 'bg-accent text-white brutal-shadow',
+    secondary: 'bg-elevated text-ink brutal-shadow',
+    ghost: 'bg-transparent text-ink hover:bg-hairline/40',
+    danger: 'bg-danger text-white brutal-shadow',
   }
   return <button className={`${base} ${variants[variant]} ${className}`} {...props} />
 }
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl bg-elevated border border-hairline p-5 ${className}`}>
-      {children}
-    </div>
+    <div className={`rounded-sm bg-elevated border-2 border-ink p-5 ${className}`}>{children}</div>
   )
 }
 
-export function PillChip({
+export function Chip({
   active,
   children,
   className = '',
@@ -35,10 +33,8 @@ export function PillChip({
   return (
     <button
       type="button"
-      className={`rounded-pill px-4 min-h-12 text-sm font-medium border transition-colors flex items-center justify-center ${
-        active
-          ? 'bg-accent text-white border-accent'
-          : 'bg-elevated text-ink border-line hover:border-accent'
+      className={`rounded-sm px-4 min-h-12 text-sm font-bold border-2 border-ink transition-colors flex items-center justify-center ${
+        active ? 'bg-accent text-white' : 'bg-elevated text-ink hover:bg-hairline/40'
       } ${className}`}
       {...props}
     >
@@ -55,16 +51,16 @@ export function TextField({
 }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string; error?: string | null }) {
   return (
     <label className="block">
-      <span className="block text-sm font-medium text-ink mb-1.5">{label}</span>
+      <span className="label-eyebrow block text-ink mb-2">{label}</span>
       <input
-        className={`w-full rounded-xl border bg-elevated px-4 py-3 text-ink placeholder:text-faint min-h-12 focus:outline-2 ${
-          error ? 'border-danger focus:outline-danger' : 'border-line focus:outline-accent'
+        className={`w-full rounded-sm border-2 bg-elevated px-4 py-3 text-ink placeholder:text-faint min-h-12 focus:outline-2 focus:outline-offset-2 ${
+          error ? 'border-danger focus:outline-danger' : 'border-ink focus:outline-accent'
         }`}
         aria-invalid={Boolean(error)}
         {...props}
       />
       {error ? (
-        <span className="block text-xs text-danger mt-1.5">{error}</span>
+        <span className="block text-xs font-bold text-danger mt-1.5">{error}</span>
       ) : (
         hint && <span className="block text-xs text-faint mt-1.5">{hint}</span>
       )}
@@ -75,19 +71,19 @@ export function TextField({
 export function StepProgress({ step, total }: { step: number; total: number }) {
   return (
     <div
-      className="flex items-center gap-2"
+      className="flex items-center gap-3"
       role="progressbar"
       aria-label="Onboarding progress"
       aria-valuenow={step}
       aria-valuemin={1}
       aria-valuemax={total}
     >
-      <span className="text-xs font-medium text-faint whitespace-nowrap">
-        Step {step} of {total}
+      <span className="label-eyebrow whitespace-nowrap">
+        Step {step} / {total}
       </span>
-      <div className="flex-1 h-1.5 rounded-full bg-hairline overflow-hidden">
+      <div className="flex-1 h-2 border-2 border-ink overflow-hidden">
         <div
-          className="h-full bg-accent rounded-full transition-[width]"
+          className="h-full bg-accent transition-[width]"
           style={{ width: `${(step / total) * 100}%` }}
         />
       </div>
@@ -97,8 +93,8 @@ export function StepProgress({ step, total }: { step: number; total: number }) {
 
 export function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="text-center py-10 px-4">
-      <p className="font-display text-xl mb-2">{title}</p>
+    <div className="text-center py-10 px-4 border-2 border-dashed border-hairline">
+      <p className="font-display font-bold text-xl mb-2">{title}</p>
       <p className="text-faint text-sm max-w-sm mx-auto">{body}</p>
     </div>
   )
@@ -115,7 +111,7 @@ export function WeekDots({ done, planned }: { done: number; planned: number }) {
       {Array.from({ length: total }).map((_, i) => (
         <span
           key={i}
-          className={`w-2.5 h-2.5 rounded-full ${i < done ? 'bg-accent' : 'bg-hairline'}`}
+          className={`w-3 h-3 border-2 border-ink ${i < done ? 'bg-accent' : 'bg-elevated'}`}
           aria-hidden="true"
         />
       ))}

@@ -2,7 +2,9 @@
 @import '@fontsource-variable/fraunces';
 
 /*
- * Design tokens: "paper + ink + single accent" editorial system.
+ * Design tokens: neo-brutalist editorial system — Swiss-grid structure,
+ * bold type, strong (2px) ink borders, near-zero corner radius, and a
+ * signature hard offset "block" shadow instead of any blurred/soft shadow.
  *
  * NOTE on --c-faint: the audit-spec values (light 156/152/145, dark 115/112/108)
  * fail WCAG AA (4.5:1) against canvas/elevated in both themes when checked against
@@ -12,10 +14,10 @@
 :root {
   --c-canvas: 250 249 247;
   --c-elevated: 255 255 255;
-  --c-ink: 23 22 20;
-  --c-faint: 115 111 104;
-  --c-line: 230 227 222;
-  --c-hairline: 238 235 231;
+  --c-ink: 15 15 13;
+  --c-faint: 90 87 81;
+  --c-line: 15 15 13;
+  --c-hairline: 214 209 200;
   --c-accent: 79 70 229;
   --c-accent-soft: 238 238 253;
   --c-warning: 186 118 8;
@@ -28,12 +30,12 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --c-canvas: 14 14 16;
-    --c-elevated: 32 32 36;
+    --c-elevated: 26 26 29;
     --c-ink: 244 243 241;
-    --c-faint: 140 137 131;
-    --c-line: 47 47 52;
-    --c-hairline: 39 39 44;
-    --c-accent: 132 137 246;
+    --c-faint: 158 154 147;
+    --c-line: 244 243 241;
+    --c-hairline: 58 57 54;
+    --c-accent: 145 150 255;
     --c-accent-soft: 38 39 72;
     --c-warning: 232 168 60;
     --c-danger: 248 113 113;
@@ -47,10 +49,10 @@
 [data-theme='light'] {
   --c-canvas: 250 249 247;
   --c-elevated: 255 255 255;
-  --c-ink: 23 22 20;
-  --c-faint: 115 111 104;
-  --c-line: 230 227 222;
-  --c-hairline: 238 235 231;
+  --c-ink: 15 15 13;
+  --c-faint: 90 87 81;
+  --c-line: 15 15 13;
+  --c-hairline: 214 209 200;
   --c-accent: 79 70 229;
   --c-accent-soft: 238 238 253;
   --c-warning: 186 118 8;
@@ -62,12 +64,12 @@
 
 [data-theme='dark'] {
   --c-canvas: 14 14 16;
-  --c-elevated: 32 32 36;
+  --c-elevated: 26 26 29;
   --c-ink: 244 243 241;
-  --c-faint: 140 137 131;
-  --c-line: 47 47 52;
-  --c-hairline: 39 39 44;
-  --c-accent: 132 137 246;
+  --c-faint: 158 154 147;
+  --c-line: 244 243 241;
+  --c-hairline: 58 57 54;
+  --c-accent: 145 150 255;
   --c-accent-soft: 38 39 72;
   --c-warning: 232 168 60;
   --c-danger: 248 113 113;
@@ -93,18 +95,16 @@
     -apple-system, 'Segoe UI Variable Display', 'Segoe UI', Inter, Roboto, sans-serif;
   --font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
 
-  --radius-sm: 0.375rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1.25rem;
-  --radius-xl: 1.875rem;
-  --radius-pill: 9999px;
+  /* Near-zero throughout — the one deliberate exception is status dots,
+     which stay tiny filled squares (see components below), never circles. */
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-pill: 2px;
 }
 
 @layer base {
-  * {
-    box-shadow: none;
-  }
-
   html,
   body {
     background-color: var(--color-canvas);
@@ -113,11 +113,42 @@
 
   body {
     font-family: var(--font-sans);
+    font-weight: 500;
     -webkit-font-smoothing: antialiased;
   }
 
   .font-display {
     font-family: var(--font-display);
     font-variation-settings: 'opsz' 36;
+    letter-spacing: -0.01em;
+  }
+
+  /* Swiss-grid "eyebrow" label — small, uppercase, tracked, bold. Used for
+     section labels, step counters, card headers: the structural device that
+     replaces soft/faint captions with a firm typographic hierarchy. */
+  .label-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+}
+
+@layer components {
+  /* The signature neo-brutalist device: a hard, non-blurred offset block —
+     a graphic element, not a simulated light source. Shrinks and the
+     element nudges toward it on press, reading as a physical push. */
+  .brutal-shadow {
+    box-shadow: 4px 4px 0 0 rgb(var(--c-ink));
+  }
+  .brutal-shadow-sm {
+    box-shadow: 2px 2px 0 0 rgb(var(--c-ink));
+  }
+  .brutal-press {
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .brutal-press:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 0 rgb(var(--c-ink)) !important;
   }
 }

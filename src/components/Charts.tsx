@@ -33,9 +33,9 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-hairline bg-elevated px-3 py-2 text-xs shadow-none">
-      <p className="text-faint mb-0.5">{label}</p>
-      <p className="font-medium text-ink">
+    <div className="rounded-sm border-2 border-ink bg-elevated px-3 py-2 text-xs">
+      <p className="label-eyebrow text-faint mb-1">{label}</p>
+      <p className="font-bold text-ink">
         {payload[0].value}
         {unit ? ` ${unit}` : ''}
       </p>
@@ -57,7 +57,7 @@ export function TrendLineChart({
   }
 
   const accent = cssVar('--c-accent')
-  const line = cssVar('--c-line')
+  const gridLine = cssVar('--c-hairline')
   const faint = cssVar('--c-faint')
 
   return (
@@ -69,11 +69,11 @@ export function TrendLineChart({
             <stop offset="100%" stopColor={accent} stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid vertical={false} stroke={line} strokeDasharray="0" />
+        <CartesianGrid vertical={false} stroke={gridLine} strokeDasharray="0" />
         <XAxis
           dataKey="date"
           tick={{ fill: faint, fontSize: 11 }}
-          axisLine={{ stroke: line }}
+          axisLine={{ stroke: gridLine }}
           tickLine={false}
           minTickGap={24}
         />
@@ -104,23 +104,23 @@ export function VolumeBarChart({ data, emptyLabel }: { data: SeriesPoint[]; empt
   }
 
   const accent = cssVar('--c-accent')
-  const line = cssVar('--c-line')
+  const gridLine = cssVar('--c-hairline')
   const faint = cssVar('--c-faint')
 
   return (
     <ResponsiveContainer width="100%" height={180}>
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }} barCategoryGap="30%">
-        <CartesianGrid vertical={false} stroke={line} />
+        <CartesianGrid vertical={false} stroke={gridLine} />
         <XAxis
           dataKey="date"
           tick={{ fill: faint, fontSize: 11 }}
-          axisLine={{ stroke: line }}
+          axisLine={{ stroke: gridLine }}
           tickLine={false}
           minTickGap={24}
         />
         <YAxis tick={{ fill: faint, fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
         <Tooltip content={<ChartTooltip unit="kg" />} />
-        <Bar dataKey="value" fill={accent} radius={[4, 4, 0, 0]} maxBarSize={24} />
+        <Bar dataKey="value" fill={accent} radius={[0, 0, 0, 0]} maxBarSize={24} />
       </BarChart>
     </ResponsiveContainer>
   )

@@ -31,7 +31,7 @@ await page.click('text=Continue')
 await page.click('text=Build my plan')
 await page.waitForSelector('text=Your plan is ready.')
 await page.click('text=See my plan')
-await page.waitForSelector('text=Home')
+await page.waitForURL('**/dashboard')
 
 await page.goto('http://localhost:5173/profile')
 await page.waitForSelector('text=AI weekly coach')

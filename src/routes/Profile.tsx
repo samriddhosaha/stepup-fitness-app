@@ -5,7 +5,7 @@ import { db, wipeAllData } from '../db/schema'
 import { useTheme } from '../lib/theme'
 import { exportAllData, importAllData } from '../lib/backup'
 import { track } from '../lib/analytics'
-import { Button, Card, PillChip } from '../components/ui'
+import { Button, Card, Chip } from '../components/ui'
 import type { Appearance, WeightUnit } from '../db/types'
 
 const AI_COACH_CONSENT_COPY =
@@ -59,130 +59,132 @@ export default function Profile() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-display text-2xl">Profile</h1>
+    <div>
+      <h1 className="font-display font-bold text-3xl md:text-4xl mb-6">Profile</h1>
 
-      <Card>
-        <p className="font-medium mb-1">{profile.name}</p>
-        <p className="text-sm text-faint mb-3">
-          {profile.daysPerWeek} days a week · {profile.sessionLengthMinutes} min sessions
-        </p>
-        <Link to="/profile/edit">
-          <Button variant="secondary">Edit preferences</Button>
-        </Link>
-      </Card>
+      <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-2 md:gap-6 md:items-start">
+        <Card className="md:col-span-2">
+          <p className="font-bold mb-1">{profile.name}</p>
+          <p className="text-sm text-faint mb-3">
+            {profile.daysPerWeek} days a week · {profile.sessionLengthMinutes} min sessions
+          </p>
+          <Link to="/profile/edit">
+            <Button variant="secondary">Edit preferences</Button>
+          </Link>
+        </Card>
 
-      <Card>
-        <p className="font-medium mb-3">Units</p>
-        <div className="flex gap-2">
-          {(['kg', 'lb'] as WeightUnit[]).map((u) => (
-            <PillChip key={u} active={profile.weightUnit === u} onClick={() => updateWeightUnit(u)}>
-              {u}
-            </PillChip>
-          ))}
-        </div>
-      </Card>
+        <Card>
+          <p className="label-eyebrow text-faint mb-3">Units</p>
+          <div className="flex gap-2">
+            {(['kg', 'lb'] as WeightUnit[]).map((u) => (
+              <Chip key={u} active={profile.weightUnit === u} onClick={() => updateWeightUnit(u)}>
+                {u}
+              </Chip>
+            ))}
+          </div>
+        </Card>
 
-      <Card>
-        <p className="font-medium mb-3">Appearance</p>
-        <div className="flex gap-2">
-          {(['light', 'dark', 'system'] as Appearance[]).map((a) => (
-            <PillChip key={a} active={appearance === a} onClick={() => updateAppearance(a)}>
-              {a.charAt(0).toUpperCase() + a.slice(1)}
-            </PillChip>
-          ))}
-        </div>
-      </Card>
+        <Card>
+          <p className="label-eyebrow text-faint mb-3">Appearance</p>
+          <div className="flex gap-2">
+            {(['light', 'dark', 'system'] as Appearance[]).map((a) => (
+              <Chip key={a} active={appearance === a} onClick={() => updateAppearance(a)}>
+                {a.charAt(0).toUpperCase() + a.slice(1)}
+              </Chip>
+            ))}
+          </div>
+        </Card>
 
-      <Card>
-        <div className="flex items-center justify-between mb-1">
-          <p className="font-medium">AI weekly coach</p>
-          <button
-            role="switch"
-            aria-label="AI weekly coach"
-            aria-checked={Boolean(activeProfile.aiCoachEnabled)}
-            onClick={() =>
-              activeProfile.aiCoachEnabled ? setAICoachEnabled(false) : setConfirmingAICoach(true)
-            }
-            className={`w-12 h-7 rounded-pill relative transition-colors ${
-              activeProfile.aiCoachEnabled ? 'bg-accent' : 'bg-hairline'
-            }`}
-          >
-            <span
-              className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-elevated transition-transform ${
-                activeProfile.aiCoachEnabled ? 'translate-x-5' : ''
+        <Card className="md:col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <p className="label-eyebrow text-faint">AI weekly coach</p>
+            <button
+              role="switch"
+              aria-label="AI weekly coach"
+              aria-checked={Boolean(activeProfile.aiCoachEnabled)}
+              onClick={() =>
+                activeProfile.aiCoachEnabled ? setAICoachEnabled(false) : setConfirmingAICoach(true)
+              }
+              className={`w-12 h-7 border-2 border-ink relative transition-colors ${
+                activeProfile.aiCoachEnabled ? 'bg-accent' : 'bg-elevated'
               }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 border-2 border-ink bg-elevated transition-transform ${
+                  activeProfile.aiCoachEnabled ? 'translate-x-4' : ''
+                }`}
+              />
+            </button>
+          </div>
+          <p className="text-sm text-faint mt-2">
+            Sends your last 7 days of training data to generate a written
+            review. Off by default.
+          </p>
+          {confirmingAICoach && (
+            <div className="mt-4 pt-4 border-t-2 border-ink">
+              <p className="text-sm mb-3">{AI_COACH_CONSENT_COPY}</p>
+              <div className="flex gap-3">
+                <Button variant="ghost" className="flex-1" onClick={() => setConfirmingAICoach(false)}>
+                  Cancel
+                </Button>
+                <Button variant="secondary" className="flex-1" onClick={() => setAICoachEnabled(true)}>
+                  Turn on
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        <Card className="md:col-span-2">
+          <p className="label-eyebrow text-faint mb-2">Your data</p>
+          <p className="text-sm text-faint mb-4">
+            Everything lives on this device only. Back it up so a lost or reset
+            device doesn't mean losing your history.
+          </p>
+          <div className="flex gap-3 flex-wrap">
+            <Button variant="secondary" onClick={handleExport}>
+              Export data
+            </Button>
+            <Button variant="ghost" onClick={() => fileInputRef.current?.click()}>
+              Import data
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleImportFile(e.target.files[0])}
             />
-          </button>
-        </div>
-        <p className="text-sm text-faint">
-          Sends your last 7 days of training data to generate a written
-          review. Off by default.
-        </p>
-        {confirmingAICoach && (
-          <div className="mt-4 pt-4 border-t border-hairline">
-            <p className="text-sm mb-3">{AI_COACH_CONSENT_COPY}</p>
+          </div>
+          {importMessage && <p className="text-sm text-faint mt-3">{importMessage}</p>}
+        </Card>
+
+        <Link to="/guide" className="md:col-span-2 block text-sm font-bold text-accent">
+          How StepUp works
+        </Link>
+
+        <Card className="md:col-span-2 border-danger">
+          <p className="label-eyebrow text-danger mb-2">Reset all data</p>
+          <p className="text-sm text-faint mb-4">
+            Consider exporting your data first. Deleting removes your profile,
+            plan, history, and progress. This cannot be undone.
+          </p>
+          {!confirmingDelete ? (
+            <Button variant="danger" onClick={() => setConfirmingDelete(true)}>
+              Delete everything
+            </Button>
+          ) : (
             <div className="flex gap-3">
-              <Button variant="ghost" className="flex-1" onClick={() => setConfirmingAICoach(false)}>
+              <Button variant="ghost" onClick={() => setConfirmingDelete(false)}>
                 Cancel
               </Button>
-              <Button variant="secondary" className="flex-1" onClick={() => setAICoachEnabled(true)}>
-                Turn on
+              <Button variant="danger" onClick={handleDeleteAll}>
+                Yes, delete everything
               </Button>
             </div>
-          </div>
-        )}
-      </Card>
-
-      <Card>
-        <p className="font-medium mb-2">Your data</p>
-        <p className="text-sm text-faint mb-4">
-          Everything lives on this device only. Back it up so a lost or reset
-          device doesn't mean losing your history.
-        </p>
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={handleExport}>
-            Export data
-          </Button>
-          <Button variant="ghost" onClick={() => fileInputRef.current?.click()}>
-            Import data
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && handleImportFile(e.target.files[0])}
-          />
-        </div>
-        {importMessage && <p className="text-sm text-faint mt-3">{importMessage}</p>}
-      </Card>
-
-      <Link to="/guide" className="block text-sm text-accent">
-        How StepUp works
-      </Link>
-
-      <Card className="border-danger/30">
-        <p className="font-medium mb-2">Reset all data</p>
-        <p className="text-sm text-faint mb-4">
-          Consider exporting your data first. Deleting removes your profile,
-          plan, history, and progress. This cannot be undone.
-        </p>
-        {!confirmingDelete ? (
-          <Button variant="danger" onClick={() => setConfirmingDelete(true)}>
-            Delete everything
-          </Button>
-        ) : (
-          <div className="flex gap-3">
-            <Button variant="ghost" onClick={() => setConfirmingDelete(false)}>
-              Cancel
-            </Button>
-            <Button variant="danger" onClick={handleDeleteAll}>
-              Yes, delete everything
-            </Button>
-          </div>
-        )}
-      </Card>
+          )}
+        </Card>
+      </div>
     </div>
   )
 }

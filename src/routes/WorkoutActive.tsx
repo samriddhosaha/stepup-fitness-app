@@ -193,31 +193,31 @@ export default function WorkoutActive() {
     <div className="flex-1 flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <button
-          className="text-sm text-faint min-h-12 px-2"
+          className="text-sm font-bold text-faint min-h-12 px-2"
           onClick={() => setShowLeaveConfirm(true)}
         >
           Leave
         </button>
-        <p className="text-xs text-faint">
-          Exercise {index + 1} of {exerciseIds.length}
+        <p className="label-eyebrow text-faint">
+          Exercise {index + 1} / {exerciseIds.length}
         </p>
         <button
-          className="text-sm text-accent min-h-12 px-2"
+          className="text-sm font-bold text-accent min-h-12 px-2"
           onClick={() => handleFinish(true)}
         >
           Finish early
         </button>
       </div>
 
-      <h1 className="font-display text-2xl mb-1">{currentExercise.name}</h1>
+      <h1 className="font-display font-bold text-2xl md:text-3xl mb-1">{currentExercise.name}</h1>
       <p className="text-sm text-faint mb-4">
         {setsLogged} of {targetSets} sets · target {plannedExercise?.targetRepsLow}-
         {plannedExercise?.targetRepsHigh} reps
       </p>
 
       {warmupRamp && setsLogged === 0 && (
-        <Card className="mb-4 bg-accent-soft border-none">
-          <p className="text-sm font-medium mb-2">Warm-up first</p>
+        <Card className="mb-4 bg-accent-soft">
+          <p className="label-eyebrow mb-2">Warm-up first</p>
           <ul className="text-sm text-faint space-y-1">
             {warmupRamp.map((r, i) => {
               const base = plannedExercise?.startingLoadKg ?? 0
@@ -252,7 +252,7 @@ export default function WorkoutActive() {
 
       {showSwap && (
         <Card className="mb-4">
-          <p className="font-medium mb-3">Same movement, same muscles, kit you actually have</p>
+          <p className="font-bold mb-3">Same movement, same muscles, kit you actually have</p>
           {substitutes.length === 0 ? (
             <p className="text-sm text-faint">
               There's no close swap available with your equipment.
@@ -262,7 +262,7 @@ export default function WorkoutActive() {
               {substitutes.map((sub) => (
                 <button
                   key={sub.id}
-                  className="w-full text-left rounded-xl border border-line px-4 py-3 min-h-12 hover:border-accent"
+                  className="w-full text-left font-bold rounded-sm border-2 border-ink px-4 py-3 min-h-12 hover:bg-hairline/40"
                   onClick={() => handleSwap(sub.id)}
                 >
                   {sub.name}
@@ -278,12 +278,12 @@ export default function WorkoutActive() {
 
       {showSkip && (
         <Card className="mb-4">
-          <p className="font-medium mb-3">Why skip this one?</p>
+          <p className="font-bold mb-3">Why skip this one?</p>
           <div className="space-y-2">
             {SKIP_REASONS.map((r) => (
               <button
                 key={r.value}
-                className="w-full text-left rounded-xl border border-line px-4 py-3 min-h-12 hover:border-accent"
+                className="w-full text-left font-bold rounded-sm border-2 border-ink px-4 py-3 min-h-12 hover:bg-hairline/40"
                 onClick={() => handleSkip(r.value)}
               >
                 {r.label}
@@ -301,7 +301,7 @@ export default function WorkoutActive() {
 
       {showLeaveConfirm && (
         <Card className="mb-4">
-          <p className="font-medium mb-2">Leave this workout?</p>
+          <p className="font-bold mb-2">Leave this workout?</p>
           <p className="text-sm text-faint mb-3">
             Nothing logged so far will be saved.
           </p>
@@ -320,7 +320,7 @@ export default function WorkoutActive() {
         <>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <label className="block">
-              <span className="block text-xs text-faint mb-1">Weight (kg)</span>
+              <span className="label-eyebrow block text-faint mb-1.5">Weight (kg)</span>
               <input
                 type="number"
                 inputMode="decimal"
@@ -329,14 +329,14 @@ export default function WorkoutActive() {
                 aria-invalid={Boolean(weightError)}
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
-                className={`w-full rounded-xl border bg-elevated px-3 py-3 min-h-12 text-center text-lg focus:outline-2 ${
-                  weightError ? 'border-danger focus:outline-danger' : 'border-line focus:outline-accent'
+                className={`w-full rounded-sm border-2 bg-elevated px-3 py-3 min-h-12 text-center text-lg font-bold focus:outline-2 ${
+                  weightError ? 'border-danger focus:outline-danger' : 'border-ink focus:outline-accent'
                 }`}
               />
-              {weightError && <span className="block text-xs text-danger mt-1">{weightError}</span>}
+              {weightError && <span className="block text-xs font-bold text-danger mt-1">{weightError}</span>}
             </label>
             <label className="block">
-              <span className="block text-xs text-faint mb-1">Reps</span>
+              <span className="label-eyebrow block text-faint mb-1.5">Reps</span>
               <input
                 type="number"
                 inputMode="numeric"
@@ -345,14 +345,14 @@ export default function WorkoutActive() {
                 aria-invalid={Boolean(repsError)}
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
-                className={`w-full rounded-xl border bg-elevated px-3 py-3 min-h-12 text-center text-lg focus:outline-2 ${
-                  repsError ? 'border-danger focus:outline-danger' : 'border-line focus:outline-accent'
+                className={`w-full rounded-sm border-2 bg-elevated px-3 py-3 min-h-12 text-center text-lg font-bold focus:outline-2 ${
+                  repsError ? 'border-danger focus:outline-danger' : 'border-ink focus:outline-accent'
                 }`}
               />
-              {repsError && <span className="block text-xs text-danger mt-1">{repsError}</span>}
+              {repsError && <span className="block text-xs font-bold text-danger mt-1">{repsError}</span>}
             </label>
             <div>
-              <span className="block text-xs text-faint mb-1">RPE</span>
+              <span className="label-eyebrow block text-faint mb-1.5">RPE</span>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button
@@ -360,8 +360,8 @@ export default function WorkoutActive() {
                     aria-label={`RPE ${n}`}
                     aria-pressed={rpe === n}
                     onClick={() => setRpe(n)}
-                    className={`flex-1 min-h-12 rounded-lg text-sm font-medium border ${
-                      rpe === n ? 'bg-accent text-white border-accent' : 'border-line'
+                    className={`flex-1 min-h-12 rounded-sm text-sm font-bold border-2 border-ink ${
+                      rpe === n ? 'bg-accent text-white' : 'bg-elevated'
                     }`}
                   >
                     {n}
@@ -381,7 +381,7 @@ export default function WorkoutActive() {
 
           {restRunning && (
             <Card className="mb-4">
-              <p className="text-center text-3xl font-display mb-3">
+              <p className="text-center text-3xl font-display font-bold mb-3">
                 {Math.floor(restSeconds / 60)}:{String(restSeconds % 60).padStart(2, '0')}
               </p>
               <div className="flex gap-3">
