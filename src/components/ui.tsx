@@ -66,7 +66,14 @@ export function TextField({
 
 export function StepProgress({ step, total }: { step: number; total: number }) {
   return (
-    <div className="flex items-center gap-2" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={total}>
+    <div
+      className="flex items-center gap-2"
+      role="progressbar"
+      aria-label="Onboarding progress"
+      aria-valuenow={step}
+      aria-valuemin={1}
+      aria-valuemax={total}
+    >
       <span className="text-xs font-medium text-faint whitespace-nowrap">
         Step {step} of {total}
       </span>
@@ -92,7 +99,11 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
 export function WeekDots({ done, planned }: { done: number; planned: number }) {
   const total = Math.max(planned, done, 1)
   return (
-    <div className="flex items-center gap-1.5" aria-label={`${done} of ${planned} sessions done this week`}>
+    <div
+      className="flex items-center gap-1.5"
+      role="group"
+      aria-label={`${done} of ${planned} sessions done this week`}
+    >
       {Array.from({ length: total }).map((_, i) => (
         <span
           key={i}

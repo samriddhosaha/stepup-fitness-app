@@ -329,6 +329,7 @@ export default function Onboarding() {
               </span>
               <input
                 type="range"
+                aria-label="Days per week"
                 min={1}
                 max={6}
                 value={draft.daysPerWeek}
@@ -344,6 +345,7 @@ export default function Onboarding() {
               </span>
               <input
                 type="range"
+                aria-label="Typical session length in minutes"
                 min={15}
                 max={90}
                 step={5}

@@ -99,6 +99,7 @@ export default function Profile() {
           <p className="font-medium">AI weekly coach</p>
           <button
             role="switch"
+            aria-label="AI weekly coach"
             aria-checked={Boolean(activeProfile.aiCoachEnabled)}
             onClick={() =>
               activeProfile.aiCoachEnabled ? setAICoachEnabled(false) : setConfirmingAICoach(true)

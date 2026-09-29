@@ -120,6 +120,7 @@ export default function ProfileEdit() {
           <p className="text-sm font-medium mb-2">Days per week: {draft.daysPerWeek}</p>
           <input
             type="range"
+            aria-label="Days per week"
             min={1}
             max={6}
             value={draft.daysPerWeek}
@@ -132,6 +133,7 @@ export default function ProfileEdit() {
           <p className="text-sm font-medium mb-2">Session length: {draft.sessionLengthMinutes} min</p>
           <input
             type="range"
+            aria-label="Session length in minutes"
             min={15}
             max={90}
             step={5}
