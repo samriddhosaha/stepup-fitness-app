@@ -1,0 +1,112 @@
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db, getActivePlan } from '../db/schema'
+import { getExerciseById } from '../db/exerciseLibrary'
+import { findTodaysSession, startSession } from '../lib/workout'
+import { computeStreak } from '../lib/streak'
+import { generateWeeklyRecap } from '../lib/recap'
+import { track } from '../lib/analytics'
+import { greetingForNow, startOfWeekISO } from '../lib/format'
+import { Button, Card, WeekDots } from '../components/ui'
+
+export default function Dashboard() {
+  const navigate = useNavigate()
+  const profile = useLiveQuery(() => db.profile.orderBy('createdAt').last())
+  const plan = useLiveQuery(getActivePlan)
+  const sessions = useLiveQuery(() => db.workoutSessions.toArray())
+  const recentPR = useLiveQuery(async () => {
+    const rows = await db.personalRecords
+      .filter((r) => r.achievedAt >= Date.now() - 7 * 24 * 60 * 60 * 1000)
+      .toArray()
+    return rows.sort((a, b) => a.achievedAt - b.achievedAt)
+  })
+  const [recap, setRecap] = useState<string | null>(null)
+
+  useEffect(() => {
+    generateWeeklyRecap().then(setRecap)
+  }, [sessions])
+
+  if (!plan || !sessions) return null
+
+  const activePlan = plan
+  const todays = findTodaysSession(activePlan.sessions)
+  const streak = computeStreak(activePlan, sessions)
+  const doneThisWeek = sessions.filter(
+    (s) => s.completedAt && s.date >= startOfWeekISO(),
+  ).length
+  const latestPR = recentPR?.[recentPR.length - 1]
+
+  async function begin() {
+    const target = todays ?? activePlan.sessions[0]
+    await startSession(target)
+    await track('workout_started', { session: target.name })
+    navigate('/workout/active')
+  }
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-faint">
+        {greetingForNow()}{profile?.name ? `, ${profile.name}` : ''}
+      </p>
+
+      <Card>
+        {todays ? (
+          <>
+            <p className="font-display text-xl mb-1">{todays.name}</p>
+            <p className="text-sm text-faint mb-4">Nothing to prove today. Just begin.</p>
+            <Button className="w-full" onClick={begin}>
+              Start workout
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="font-display text-xl mb-1">Nothing scheduled.</p>
+            <p className="text-sm text-faint mb-4">A rest day.</p>
+            <Button variant="secondary" className="w-full" onClick={() => navigate('/workout')}>
+              Train anyway
+            </Button>
+          </>
+        )}
+      </Card>
+
+      {streak > 0 && (
+        <p className="text-sm text-faint">
+          <span className="text-ink font-medium">{streak}</span> session streak
+        </p>
+      )}
+
+      <div>
+        <p className="text-xs text-faint mb-2">This week</p>
+        <WeekDots done={doneThisWeek} planned={activePlan.sessions.length} />
+      </div>
+
+      {latestPR && (
+        <Card className="bg-accent-soft border-none">
+          <p className="text-sm font-medium">
+            New personal best — {getExerciseById(latestPR.exerciseId)?.name}
+          </p>
+        </Card>
+      )}
+
+      {recap && (
+        <div>
+          <p className="text-xs text-faint mb-2">This week, in short</p>
+          <p className="text-sm">{recap}</p>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2 pt-2">
+        <Link to="/progress/xp" className="text-sm text-accent">
+          XP & level →
+        </Link>
+        <Link to="/history" className="text-sm text-accent">
+          Full history →
+        </Link>
+        <Link to="/guide" className="text-sm text-accent">
+          How Forge works →
+        </Link>
+      </div>
+    </div>
+  )
+}

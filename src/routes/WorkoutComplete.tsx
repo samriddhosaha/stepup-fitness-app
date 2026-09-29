@@ -1,0 +1,109 @@
+import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../db/schema'
+import type { PersonalRecord } from '../db/types'
+import { getExerciseById } from '../db/exerciseLibrary'
+import { formatDuration } from '../lib/format'
+import { notificationsSupported, requestNotificationPermission } from '../lib/notifications'
+import { Button, Card } from '../components/ui'
+
+export default function WorkoutComplete() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const sessionId = (location.state as { sessionId?: number } | null)?.sessionId
+
+  const session = useLiveQuery(
+    () => (sessionId ? db.workoutSessions.get(sessionId) : undefined),
+    [sessionId],
+  )
+  const prs = useLiveQuery(
+    (): Promise<PersonalRecord[]> =>
+      sessionId
+        ? db.personalRecords.filter((r) => Math.abs(r.achievedAt - (session?.completedAt ?? 0)) < 60_000).toArray()
+        : Promise.resolve([]),
+    [sessionId, session?.completedAt],
+  )
+  const completedCount = useLiveQuery(() =>
+    db.workoutSessions.filter((s) => Boolean(s.completedAt)).count(),
+  )
+  const [notifDismissed, setNotifDismissed] = useState(false)
+
+  if (sessionId === undefined) {
+    navigate('/dashboard', { replace: true })
+    return null
+  }
+
+  if (!session) return null
+
+  const totalSets = session.exercises.reduce((sum, e) => sum + e.sets.length, 0)
+  const showNotificationAsk =
+    !notifDismissed &&
+    completedCount === 1 &&
+    notificationsSupported() &&
+    Notification.permission === 'default'
+
+  return (
+    <div className="flex-1 flex flex-col justify-between py-10">
+      <div>
+        <p className="font-display text-3xl mb-2">Workout complete.</p>
+        <p className="text-faint">
+          {session.finishedEarly ? 'Finished early — still counts.' : 'You showed up. That’s the whole job.'}
+        </p>
+      </div>
+
+      <div className="space-y-3 my-6">
+        <Card>
+          <div className="flex justify-between text-sm">
+            <span className="text-faint">Duration</span>
+            <span>{formatDuration(session.durationSeconds ?? 0)}</span>
+          </div>
+          <div className="flex justify-between text-sm mt-2">
+            <span className="text-faint">Sets logged</span>
+            <span>{totalSets}</span>
+          </div>
+        </Card>
+
+        {prs && prs.length > 0 && (
+          <Card className="bg-accent-soft border-none">
+            <p className="font-medium mb-2">New personal best</p>
+            {prs.map((pr) => (
+              <p key={pr.id} className="text-sm">
+                {getExerciseById(pr.exerciseId)?.name} — {pr.value} kg est.
+              </p>
+            ))}
+          </Card>
+        )}
+
+        {showNotificationAsk && (
+          <Card>
+            <p className="text-sm font-medium mb-1">Get reminded, gently</p>
+            <p className="text-xs text-faint mb-3">
+              A quiet nudge if a scheduled day passes without a workout, or
+              your streak is about to lapse. Nothing else.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="ghost" className="flex-1" onClick={() => setNotifDismissed(true)}>
+                Not now
+              </Button>
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={async () => {
+                  await requestNotificationPermission()
+                  setNotifDismissed(true)
+                }}
+              >
+                Turn on
+              </Button>
+            </div>
+          </Card>
+        )}
+      </div>
+
+      <Button className="w-full" onClick={() => navigate('/dashboard')}>
+        Back to dashboard
+      </Button>
+    </div>
+  )
+}

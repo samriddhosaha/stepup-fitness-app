@@ -1,0 +1,123 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/fraunces';
+
+/*
+ * Design tokens: "paper + ink + single accent" editorial system.
+ *
+ * NOTE on --c-faint: the audit-spec values (light 156/152/145, dark 115/112/108)
+ * fail WCAG AA (4.5:1) against canvas/elevated in both themes when checked against
+ * the real token backgrounds. Values below are shifted within the same warm-gray hue
+ * family until they clear 4.5:1 against both canvas and elevated in their theme.
+ */
+:root {
+  --c-canvas: 250 249 247;
+  --c-elevated: 255 255 255;
+  --c-ink: 23 22 20;
+  --c-faint: 115 111 104;
+  --c-line: 230 227 222;
+  --c-hairline: 238 235 231;
+  --c-accent: 79 70 229;
+  --c-accent-soft: 238 238 253;
+  --c-warning: 186 118 8;
+  --c-danger: 199 44 44;
+  --c-danger-soft: 253 232 232;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-canvas: 14 14 16;
+    --c-elevated: 32 32 36;
+    --c-ink: 244 243 241;
+    --c-faint: 140 137 131;
+    --c-line: 47 47 52;
+    --c-hairline: 39 39 44;
+    --c-accent: 132 137 246;
+    --c-accent-soft: 38 39 72;
+    --c-warning: 232 168 60;
+    --c-danger: 248 113 113;
+    --c-danger-soft: 58 26 26;
+
+    color-scheme: dark;
+  }
+}
+
+/* Explicit overrides for the Profile > Appearance setting (light/dark/system) */
+[data-theme='light'] {
+  --c-canvas: 250 249 247;
+  --c-elevated: 255 255 255;
+  --c-ink: 23 22 20;
+  --c-faint: 115 111 104;
+  --c-line: 230 227 222;
+  --c-hairline: 238 235 231;
+  --c-accent: 79 70 229;
+  --c-accent-soft: 238 238 253;
+  --c-warning: 186 118 8;
+  --c-danger: 199 44 44;
+  --c-danger-soft: 253 232 232;
+
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --c-canvas: 14 14 16;
+  --c-elevated: 32 32 36;
+  --c-ink: 244 243 241;
+  --c-faint: 140 137 131;
+  --c-line: 47 47 52;
+  --c-hairline: 39 39 44;
+  --c-accent: 132 137 246;
+  --c-accent-soft: 38 39 72;
+  --c-warning: 232 168 60;
+  --c-danger: 248 113 113;
+  --c-danger-soft: 58 26 26;
+
+  color-scheme: dark;
+}
+
+@theme {
+  --color-canvas: rgb(var(--c-canvas));
+  --color-elevated: rgb(var(--c-elevated));
+  --color-ink: rgb(var(--c-ink));
+  --color-faint: rgb(var(--c-faint));
+  --color-line: rgb(var(--c-line));
+  --color-hairline: rgb(var(--c-hairline));
+  --color-accent: rgb(var(--c-accent));
+  --color-accent-soft: rgb(var(--c-accent-soft));
+  --color-warning: rgb(var(--c-warning));
+  --color-danger: rgb(var(--c-danger));
+  --color-danger-soft: rgb(var(--c-danger-soft));
+
+  --font-sans:
+    -apple-system, 'Segoe UI Variable Display', 'Segoe UI', Inter, Roboto, sans-serif;
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.875rem;
+  --radius-pill: 9999px;
+}
+
+@layer base {
+  * {
+    box-shadow: none;
+  }
+
+  html,
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+    font-variation-settings: 'opsz' 36;
+  }
+}
