@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.129.0",
     "@fontsource-variable/fraunces": "^5.3.0",
+    "@google/genai": "^2.24.0",
     "dexie": "^4.4.6",
     "dexie-react-hooks": "^4.4.0",
     "lucide-react": "^1.48.0",

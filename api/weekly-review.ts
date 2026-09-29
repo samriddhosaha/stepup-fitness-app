@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenAI } from '@google/genai'
 
 // Minimal request/response shape — deliberately not depending on
 // @vercel/node's types (its old transitive deps carry known CVEs); Vercel's
@@ -41,7 +41,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     res.status(503).json({ error: 'AI coach is not configured on this deployment.' })
     return
@@ -50,21 +50,23 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const payload = req.body as WeeklyReviewPayload
 
   try {
-    const anthropic = new Anthropic({ apiKey })
-    const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5'
+    const ai = new GoogleGenAI({ apiKey })
+    // flash-lite is plenty for a single-paragraph summarization task, and
+    // was verified reliable against this key at build time — gemini-3.8's
+    // full "flash" tier was returning transient 503 (high demand) errors.
+    const model = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest'
 
-    const message = await anthropic.messages.create({
+    const response = await ai.models.generateContent({
       model,
-      max_tokens: 300,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: buildUserMessage(payload) }],
+      contents: buildUserMessage(payload),
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
+        maxOutputTokens: 300,
+      },
     })
 
-    const review = message.content
-      .filter((block) => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
-      .trim()
+    const review = (response.text ?? '').trim()
+    if (!review) throw new Error('Empty response from model.')
 
     res.status(200).json({ review })
   } catch (err) {

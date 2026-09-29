@@ -24,13 +24,13 @@ Off by default. To test it locally with `vercel dev`, or after deploying to Verc
 
 ```bash
 cp .env.example .env
-# then fill in ANTHROPIC_API_KEY=
+# then fill in GEMINI_API_KEY=
 ```
 
 Without a configured key, the app falls back to a local, rules-based weekly recap — the AI coach never blocks the core app.
 
 ## Architecture notes
 
-- **Fully local-first.** All data lives in IndexedDB via Dexie. The only network call in the entire app is the opt-in AI weekly coach (`api/weekly-review.ts`), and it's a single-shot, stateless summarization call — no chat, no persisted session, no data stored server-side.
+- **Fully local-first.** All data lives in IndexedDB via Dexie. The only network call in the entire app is the opt-in AI weekly coach (`api/weekly-review.ts`), and it's a single-shot, stateless summarization call to the Gemini API — no chat, no persisted session, no data stored server-side.
 - **Design tokens** live in `src/index.css` as CSS custom properties, mapped into Tailwind's `@theme`. The `--c-faint` values were recalculated from the original audit spec to actually clear WCAG AA (4.5:1) against both `canvas` and `elevated` in both themes — see the comment in that file.
 - **`scripts/`** holds one-off tooling: `gen-icons.mjs` (regenerates PWA icons), and Playwright-based manual QA drivers (`drive*.mjs`, `offline-test.mjs`) used to smoke-test flows headlessly — not part of the automated test suite.
