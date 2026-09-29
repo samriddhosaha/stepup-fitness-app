@@ -12,11 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Secrets — never commit real keys; .env.example stays tracked
-.env
-.env.*
-!.env.example
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -29,3 +24,8 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Secrets — never commit real keys; .env.example stays tracked (already
+# committed, so this pattern matching it too doesn't untrack it)
+.env*
+!.env.example
