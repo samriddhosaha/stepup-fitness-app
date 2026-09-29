@@ -42,6 +42,7 @@ export interface Profile {
   injuries?: string
   weightUnit: WeightUnit
   appearance: Appearance
+  aiCoachEnabled?: boolean
   onboardingCompleted: boolean
   createdAt: number
 }

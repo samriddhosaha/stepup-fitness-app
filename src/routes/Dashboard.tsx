@@ -6,6 +6,7 @@ import { getExerciseById } from '../db/exerciseLibrary'
 import { findTodaysSession, startSession } from '../lib/workout'
 import { computeStreak } from '../lib/streak'
 import { generateWeeklyRecap } from '../lib/recap'
+import { buildWeeklyReviewPayload, requestAIWeeklyReview } from '../lib/aiCoach'
 import { track } from '../lib/analytics'
 import { greetingForNow, startOfWeekISO } from '../lib/format'
 import { Button, Card, WeekDots } from '../components/ui'
@@ -22,10 +23,40 @@ export default function Dashboard() {
     return rows.sort((a, b) => a.achievedAt - b.achievedAt)
   })
   const [recap, setRecap] = useState<string | null>(null)
+  const [recapIsFallback, setRecapIsFallback] = useState(false)
+  const aiCoachEnabled = Boolean(profile?.aiCoachEnabled)
 
   useEffect(() => {
-    generateWeeklyRecap().then(setRecap)
-  }, [sessions])
+    let cancelled = false
+
+    async function loadRecap() {
+      if (aiCoachEnabled) {
+        try {
+          const payload = await buildWeeklyReviewPayload()
+          const review = await requestAIWeeklyReview(payload)
+          if (!cancelled) {
+            setRecap(review)
+            setRecapIsFallback(false)
+          }
+          return
+        } catch {
+          // Falls through to the rules-based recap below — network issues,
+          // a missing/invalid key, or rate limits should never leave the
+          // user with no recap at all.
+        }
+      }
+      const ruleBased = await generateWeeklyRecap()
+      if (!cancelled) {
+        setRecap(ruleBased)
+        setRecapIsFallback(aiCoachEnabled)
+      }
+    }
+
+    loadRecap()
+    return () => {
+      cancelled = true
+    }
+  }, [sessions, aiCoachEnabled])
 
   if (!plan || !sessions) return null
 
@@ -92,6 +123,11 @@ export default function Dashboard() {
       {recap && (
         <div>
           <p className="text-xs text-faint mb-2">This week, in short</p>
+          {recapIsFallback && (
+            <p className="text-xs text-faint mb-1">
+              AI review unavailable this week — here's your recap instead.
+            </p>
+          )}
           <p className="text-sm">{recap}</p>
         </div>
       )}

@@ -1,32 +1,36 @@
-# React + TypeScript + Vite
+# Forge
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A personal trainer that lives in your phone. Fully local-first strength-training tracker — no account, no server, no data leaving the device unless you explicitly opt in.
 
-Currently, two official plugins are available:
+Rebuilt per `FORGE_AUDIT.md` and `BUILD_GUIDE.md` (see the parent directory).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+Vite + React 19 + TypeScript + Tailwind CSS v4 + React Router + Dexie (IndexedDB) + Recharts + vite-plugin-pwa.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev       # http://localhost:5173
+npm run build     # production build to dist/
+npm run test      # vitest
+npm run lint      # oxlint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Optional AI weekly coach
+
+Off by default. To test it locally with `vercel dev`, or after deploying to Vercel:
+
+```bash
+cp .env.example .env
+# then fill in ANTHROPIC_API_KEY=
+```
+
+Without a configured key, the app falls back to a local, rules-based weekly recap — the AI coach never blocks the core app.
+
+## Architecture notes
+
+- **Fully local-first.** All data lives in IndexedDB via Dexie. The only network call in the entire app is the opt-in AI weekly coach (`api/weekly-review.ts`), and it's a single-shot, stateless summarization call — no chat, no persisted session, no data stored server-side.
+- **Design tokens** live in `src/index.css` as CSS custom properties, mapped into Tailwind's `@theme`. The `--c-faint` values were recalculated from the original audit spec to actually clear WCAG AA (4.5:1) against both `canvas` and `elevated` in both themes — see the comment in that file.
+- **`scripts/`** holds one-off tooling: `gen-icons.mjs` (regenerates PWA icons), and Playwright-based manual QA drivers (`drive*.mjs`, `offline-test.mjs`) used to smoke-test flows headlessly — not part of the automated test suite.

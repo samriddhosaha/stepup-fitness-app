@@ -8,12 +8,16 @@ import { track } from '../lib/analytics'
 import { Button, Card, PillChip } from '../components/ui'
 import type { Appearance, WeightUnit } from '../db/types'
 
+const AI_COACH_CONSENT_COPY =
+  'Your last 7 days of workout data will be sent to generate this review. Nothing else is sent, and it isn’t stored.'
+
 export default function Profile() {
   const profile = useLiveQuery(() => db.profile.orderBy('createdAt').last())
   const { appearance, setAppearance } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importMessage, setImportMessage] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [confirmingAICoach, setConfirmingAICoach] = useState(false)
 
   if (!profile) return null
   const activeProfile = profile
@@ -25,6 +29,11 @@ export default function Profile() {
 
   async function updateWeightUnit(value: WeightUnit) {
     await db.profile.update(activeProfile.id!, { weightUnit: value })
+  }
+
+  async function setAICoachEnabled(enabled: boolean) {
+    await db.profile.update(activeProfile.id!, { aiCoachEnabled: enabled })
+    setConfirmingAICoach(false)
   }
 
   async function handleExport() {
@@ -83,6 +92,45 @@ export default function Profile() {
             </PillChip>
           ))}
         </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between mb-1">
+          <p className="font-medium">AI weekly coach</p>
+          <button
+            role="switch"
+            aria-checked={Boolean(activeProfile.aiCoachEnabled)}
+            onClick={() =>
+              activeProfile.aiCoachEnabled ? setAICoachEnabled(false) : setConfirmingAICoach(true)
+            }
+            className={`w-12 h-7 rounded-pill relative transition-colors ${
+              activeProfile.aiCoachEnabled ? 'bg-accent' : 'bg-hairline'
+            }`}
+          >
+            <span
+              className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-elevated transition-transform ${
+                activeProfile.aiCoachEnabled ? 'translate-x-5' : ''
+              }`}
+            />
+          </button>
+        </div>
+        <p className="text-sm text-faint">
+          Sends your last 7 days of training data to generate a written
+          review. Off by default.
+        </p>
+        {confirmingAICoach && (
+          <div className="mt-4 pt-4 border-t border-hairline">
+            <p className="text-sm mb-3">{AI_COACH_CONSENT_COPY}</p>
+            <div className="flex gap-3">
+              <Button variant="ghost" className="flex-1" onClick={() => setConfirmingAICoach(false)}>
+                Cancel
+              </Button>
+              <Button variant="secondary" className="flex-1" onClick={() => setAICoachEnabled(true)}>
+                Turn on
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Card>
