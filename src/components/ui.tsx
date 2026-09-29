@@ -50,16 +50,24 @@ export function PillChip({
 export function TextField({
   label,
   hint,
+  error,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string; error?: string | null }) {
   return (
     <label className="block">
       <span className="block text-sm font-medium text-ink mb-1.5">{label}</span>
       <input
-        className="w-full rounded-xl border border-line bg-elevated px-4 py-3 text-ink placeholder:text-faint min-h-12 focus:outline-2 focus:outline-accent"
+        className={`w-full rounded-xl border bg-elevated px-4 py-3 text-ink placeholder:text-faint min-h-12 focus:outline-2 ${
+          error ? 'border-danger focus:outline-danger' : 'border-line focus:outline-accent'
+        }`}
+        aria-invalid={Boolean(error)}
         {...props}
       />
-      {hint && <span className="block text-xs text-faint mt-1.5">{hint}</span>}
+      {error ? (
+        <span className="block text-xs text-danger mt-1.5">{error}</span>
+      ) : (
+        hint && <span className="block text-xs text-faint mt-1.5">{hint}</span>
+      )}
     </label>
   )
 }

@@ -4,6 +4,7 @@ import { db } from '../db/schema'
 import { EXERCISE_LIBRARY } from '../db/exerciseLibrary'
 import { bodyWeightSeries, liftProgressionSeries, weeklyVolumeSeries } from '../lib/progress'
 import { kgToDisplay, todayISODate, unitLabel } from '../lib/format'
+import { bodyWeightRangeForUnit, rangeErrorMessage } from '../lib/validation'
 import { Button, Card } from '../components/ui'
 import { TrendLineChart, VolumeBarChart } from '../components/Charts'
 
@@ -25,9 +26,11 @@ export default function Progress() {
   )
 
   const unit = profile?.weightUnit ?? 'kg'
+  const weightRange = bodyWeightRangeForUnit(unit)
+  const weightError = rangeErrorMessage(weightInput, weightRange, unitLabel(unit))
 
   async function logBodyWeight() {
-    if (!weightInput) return
+    if (!weightInput || weightError) return
     const kg = unit === 'lb' ? Number(weightInput) * 0.45359237 : Number(weightInput)
     await db.progressSnapshots.add({ date: todayISODate(), bodyWeightKg: kg })
     setWeightInput('')
@@ -48,13 +51,22 @@ export default function Progress() {
           <input
             type="number"
             inputMode="decimal"
+            min={weightRange.min}
+            max={weightRange.max}
+            aria-label={`Weight (${unitLabel(unit)})`}
+            aria-invalid={Boolean(weightError)}
             placeholder={`Weight (${unitLabel(unit)})`}
             value={weightInput}
             onChange={(e) => setWeightInput(e.target.value)}
-            className="flex-1 rounded-xl border border-line bg-elevated px-4 min-h-12 focus:outline-2 focus:outline-accent"
+            className={`flex-1 rounded-xl border bg-elevated px-4 min-h-12 focus:outline-2 ${
+              weightError ? 'border-danger focus:outline-danger' : 'border-line focus:outline-accent'
+            }`}
           />
-          <Button onClick={logBodyWeight}>Log</Button>
+          <Button onClick={logBodyWeight} disabled={!weightInput || Boolean(weightError)}>
+            Log
+          </Button>
         </div>
+        {weightError && <p className="text-xs text-danger mt-2">{weightError}</p>}
       </Card>
 
       <Card>
@@ -69,6 +81,7 @@ export default function Progress() {
         <div className="flex items-center justify-between mb-3">
           <p className="font-medium">Lift progression</p>
           <select
+            aria-label="Select lift for progression chart"
             value={selectedLift}
             onChange={(e) => setSelectedLift(e.target.value)}
             className="text-sm rounded-lg border border-line bg-elevated px-2 py-1.5"

@@ -5,6 +5,7 @@ import { Button, PillChip, StepProgress, TextField } from '../components/ui'
 import { db } from '../db/schema'
 import { generatePlan } from '../lib/plan'
 import { track } from '../lib/analytics'
+import { AGE_RANGE, BODY_WEIGHT_KG_RANGE, HEIGHT_CM_RANGE, rangeErrorMessage } from '../lib/validation'
 import type {
   Equipment,
   FitnessLevel,
@@ -96,10 +97,20 @@ export default function Onboarding() {
     }
   }, [])
 
+  const ageError = rangeErrorMessage(String(draft.age ?? ''), AGE_RANGE, 'years')
+  const heightError = rangeErrorMessage(String(draft.heightCm ?? ''), HEIGHT_CM_RANGE, 'cm')
+  const weightError = rangeErrorMessage(
+    String(draft.startingWeightKg ?? ''),
+    BODY_WEIGHT_KG_RANGE,
+    'kg',
+  )
+
   function canAdvance(): boolean {
     switch (step) {
       case 1:
         return draft.name.trim().length > 0
+      case 2:
+        return !ageError && !heightError && !weightError
       case 3:
         return draft.fitnessLevel !== undefined
       case 5:
@@ -193,6 +204,9 @@ export default function Onboarding() {
                 label="Age"
                 type="number"
                 inputMode="numeric"
+                min={AGE_RANGE.min}
+                max={AGE_RANGE.max}
+                error={ageError}
                 value={draft.age ?? ''}
                 onChange={(e) =>
                   setDraft((d) => ({
@@ -221,6 +235,9 @@ export default function Onboarding() {
                 label="Height (cm)"
                 type="number"
                 inputMode="numeric"
+                min={HEIGHT_CM_RANGE.min}
+                max={HEIGHT_CM_RANGE.max}
+                error={heightError}
                 value={draft.heightCm ?? ''}
                 onChange={(e) =>
                   setDraft((d) => ({
@@ -233,6 +250,9 @@ export default function Onboarding() {
                 label="Starting weight (kg)"
                 type="number"
                 inputMode="decimal"
+                min={BODY_WEIGHT_KG_RANGE.min}
+                max={BODY_WEIGHT_KG_RANGE.max}
+                error={weightError}
                 value={draft.startingWeightKg ?? ''}
                 onChange={(e) =>
                   setDraft((d) => ({
@@ -427,7 +447,7 @@ export default function Onboarding() {
                 />
               </label>
               <p className="text-xs text-faint">
-                Forge isn't a medical device and this isn't medical advice —
+                StepUp isn't a medical device and this isn't medical advice —
                 for injury-specific programming, check with a professional.
               </p>
             </div>

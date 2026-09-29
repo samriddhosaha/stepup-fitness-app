@@ -15,6 +15,7 @@ import { suggestNextLoad } from '../lib/overload'
 import { checkAndRecordPRs } from '../lib/records'
 import { awardXP } from '../lib/xp'
 import { track } from '../lib/analytics'
+import { REPS_RANGE, WORKOUT_LOAD_KG_RANGE, rangeErrorMessage } from '../lib/validation'
 import { Button, Card } from '../components/ui'
 import type { PlanExercise, SkipReason } from '../db/types'
 
@@ -46,6 +47,9 @@ export default function WorkoutActive() {
   const [showSkip, setShowSkip] = useState(false)
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [suggestionMessage, setSuggestionMessage] = useState<string | undefined>(undefined)
+
+  const weightError = rangeErrorMessage(weight, WORKOUT_LOAD_KG_RANGE, 'kg')
+  const repsError = rangeErrorMessage(reps, REPS_RANGE, 'reps')
 
   const planSession = useMemo(
     () => plan?.sessions.find((s) => s.name === session?.planSessionName),
@@ -108,6 +112,7 @@ export default function WorkoutActive() {
 
   async function handleLogSet() {
     if (!activeSession.id) return
+    if (weightError || repsError) return
     await logSet(
       activeSession.id,
       currentExerciseId!,
@@ -319,20 +324,32 @@ export default function WorkoutActive() {
               <input
                 type="number"
                 inputMode="decimal"
+                min={WORKOUT_LOAD_KG_RANGE.min}
+                max={WORKOUT_LOAD_KG_RANGE.max}
+                aria-invalid={Boolean(weightError)}
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
-                className="w-full rounded-xl border border-line bg-elevated px-3 py-3 min-h-12 text-center text-lg focus:outline-2 focus:outline-accent"
+                className={`w-full rounded-xl border bg-elevated px-3 py-3 min-h-12 text-center text-lg focus:outline-2 ${
+                  weightError ? 'border-danger focus:outline-danger' : 'border-line focus:outline-accent'
+                }`}
               />
+              {weightError && <span className="block text-xs text-danger mt-1">{weightError}</span>}
             </label>
             <label className="block">
               <span className="block text-xs text-faint mb-1">Reps</span>
               <input
                 type="number"
                 inputMode="numeric"
+                min={REPS_RANGE.min}
+                max={REPS_RANGE.max}
+                aria-invalid={Boolean(repsError)}
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
-                className="w-full rounded-xl border border-line bg-elevated px-3 py-3 min-h-12 text-center text-lg focus:outline-2 focus:outline-accent"
+                className={`w-full rounded-xl border bg-elevated px-3 py-3 min-h-12 text-center text-lg focus:outline-2 ${
+                  repsError ? 'border-danger focus:outline-danger' : 'border-line focus:outline-accent'
+                }`}
               />
+              {repsError && <span className="block text-xs text-danger mt-1">{repsError}</span>}
             </label>
             <div>
               <span className="block text-xs text-faint mb-1">RPE</span>
@@ -354,7 +371,11 @@ export default function WorkoutActive() {
             </div>
           </div>
 
-          <Button className="w-full mb-4" onClick={handleLogSet}>
+          <Button
+            className="w-full mb-4"
+            onClick={handleLogSet}
+            disabled={Boolean(weightError) || Boolean(repsError)}
+          >
             Complete set
           </Button>
 
