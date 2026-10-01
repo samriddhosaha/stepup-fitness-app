@@ -6,7 +6,7 @@ import type { WorkoutSession } from '../db/types'
 
 // Loaded lazily from the Profile screen so zod stays out of the main bundle.
 
-export const BACKUP_VERSION = 2
+export const BACKUP_VERSION = 3
 export const MAX_IMPORT_BYTES = 25 * 1024 * 1024
 
 const num = z.number().finite()
@@ -18,6 +18,7 @@ const loggedSet = z.object({
   weightKg: num.min(0).max(1000).optional(),
   reps: z.number().int().min(0).max(1000).optional(),
   durationSeconds: num.min(0).optional(),
+  distanceM: num.min(0).max(500_000).optional(),
   rpe: num.min(0).max(10).optional(),
   note: z.string().max(1000).optional(),
 })
@@ -27,6 +28,9 @@ const planExercise = z.object({
   targetRepsLow: num.min(0),
   targetRepsHigh: num.min(0),
   startingLoadKg: num.min(0).optional(),
+  restSeconds: num.min(0).max(1800).optional(),
+  block: z.enum(['warm-up', 'main', 'cool-down']).optional(),
+  role: z.enum(['main', 'accessory']).optional(),
 })
 const skipReason = z.enum([
   'too-difficult',
@@ -57,6 +61,10 @@ const profile = z.object({
   trainingPreferences: z.array(z.enum(['barbell', 'dumbbell', 'bodyweight', 'machines', 'conditioning', 'mobility'])).max(6),
   exclusions: z.string().max(5000).optional(),
   injuries: z.string().max(5000).optional(),
+  injuryAreas: z.array(z.enum(['lower-back', 'knee', 'shoulder', 'wrist-elbow', 'neck', 'hip'])).max(6).optional(),
+  trainingDays: z.array(z.number().int().min(0).max(6)).max(7).optional(),
+  avoidedExerciseIds: z.array(z.string().max(80)).max(300).optional(),
+  gentleStart: z.boolean().optional(),
   weightUnit: z.enum(['kg', 'lb']),
   appearance: z.enum(['light', 'dark', 'system']),
   aiCoachEnabled: z.boolean().optional(),
@@ -113,7 +121,7 @@ const personalRecord = z.object({
   reps: num.min(0),
   achievedAt: num,
   sessionId: z.number().int().optional(),
-  kind: z.enum(['weight', 'e1rm', 'reps']).optional(),
+  kind: z.enum(['weight', 'e1rm', 'reps', 'time']).optional(),
   baseline: z.boolean().optional(),
 })
 const xpEvent = z.object({
@@ -134,6 +142,23 @@ const exerciseState = z.object({
   updatedAt: num,
 })
 
+const customExercise = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().min(1).max(80),
+  movementPattern: z.enum(['squat', 'hinge', 'press', 'pull', 'carry', 'core', 'isolation', 'conditioning', 'mobility']),
+  primaryMuscles: z.array(z.string().max(40)).max(8),
+  equipmentRequired: z.array(equipment).min(1).max(5),
+  substitutionGroupId: z.string().max(80),
+  formCues: z.tuple([z.string().max(200), z.string().max(200), z.string().max(200)]),
+  trackingType: z.enum(['weight-reps', 'bodyweight-reps', 'duration', 'distance-time']),
+  skill: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  beginnerFriendly: z.boolean(),
+  contraindications: z.array(z.enum(['lower-back', 'knee', 'shoulder', 'wrist-elbow', 'neck', 'hip'])).max(6),
+  plane: z.enum(['vertical', 'horizontal']).optional(),
+  unilateral: z.boolean(),
+  kit: z.enum(['barbell', 'dumbbell', 'bodyweight', 'machine', 'band']),
+})
+
 const backupSchema = z.object({
   version: z.number().int().min(1),
   exportedAt: num,
@@ -146,6 +171,7 @@ const backupSchema = z.object({
     xpEvents: z.array(xpEvent),
     appEvents: z.array(appEvent).default([]),
     exerciseState: z.array(exerciseState).optional(),
+    customExercises: z.array(customExercise).max(500).optional(),
   }),
 })
 
@@ -218,6 +244,7 @@ export async function buildBackup(): Promise<Backup> {
       xpEvents: await db.xpEvents.toArray(),
       appEvents: await db.appEvents.toArray(),
       exerciseState: await db.exerciseState.toArray(),
+      customExercises: await db.customExercises.toArray(),
     },
   }
 }
@@ -227,7 +254,7 @@ export async function applyBackup(backup: Backup): Promise<void> {
   const t = backup.tables
   await db.transaction(
     'rw',
-    [db.profile, db.plans, db.workoutSessions, db.progressSnapshots, db.personalRecords, db.xpEvents, db.appEvents, db.exerciseState, db.weeklyReviews],
+    [db.profile, db.plans, db.workoutSessions, db.progressSnapshots, db.personalRecords, db.xpEvents, db.appEvents, db.exerciseState, db.weeklyReviews, db.customExercises],
     async () => {
       await Promise.all([
         db.profile.clear(),
@@ -239,6 +266,7 @@ export async function applyBackup(backup: Backup): Promise<void> {
         db.appEvents.clear(),
         db.exerciseState.clear(),
         db.weeklyReviews.clear(),
+        db.customExercises.clear(),
       ])
       await db.profile.bulkAdd(t.profile)
       await db.plans.bulkAdd(t.plans)
@@ -248,6 +276,7 @@ export async function applyBackup(backup: Backup): Promise<void> {
       await db.xpEvents.bulkAdd(t.xpEvents)
       await db.appEvents.bulkAdd(t.appEvents)
       await db.exerciseState.bulkAdd(t.exerciseState ?? [])
+      await db.customExercises.bulkAdd(t.customExercises ?? [])
     },
   )
 }

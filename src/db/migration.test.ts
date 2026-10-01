@@ -49,13 +49,13 @@ async function seedV1(name: string) {
   v1.close()
 }
 
-describe('schema v1 → v2 migration', () => {
+describe('schema migrations', () => {
   it('keeps existing data, backfills exerciseState from completed sessions, and clears the dead exercises table', async () => {
     await seedV1('mig-test')
     const db = new StepUpDB('mig-test')
     await db.open()
 
-    expect(db.verno).toBe(2)
+    expect(db.verno).toBe(3)
     expect((await db.profile.toArray())[0]?.name).toBe('Old')
     expect(await db.workoutSessions.count()).toBe(3)
     expect(await db.personalRecords.count()).toBe(1)
@@ -72,11 +72,47 @@ describe('schema v1 → v2 migration', () => {
     db.close()
   })
 
-  it('opens a brand-new database at v2', async () => {
+  it('opens a brand-new database at the latest version', async () => {
     const db = new StepUpDB('fresh-test')
     await db.open()
-    expect(db.verno).toBe(2)
+    expect(db.verno).toBe(3)
+    expect(await db.customExercises.count()).toBe(0)
     expect(await db.exerciseState.count()).toBe(0)
+    db.close()
+  })
+})
+
+describe('schema v2 → v3', () => {
+  it('adds custom exercises without touching existing data', async () => {
+    const v2 = new Dexie('mig-v2')
+    v2.version(1).stores({
+      profile: '++id, createdAt',
+      plans: '++id, createdAt',
+      exercises: 'id, movementPattern, substitutionGroupId',
+      workoutSessions: '++id, date, completedAt',
+      progressSnapshots: '++id, date',
+      personalRecords: '++id, exerciseId, achievedAt',
+      xpEvents: '++id, type, occurredAt',
+      appEvents: '++id, name, occurredAt',
+    })
+    v2.version(2).stores({
+      personalRecords: '++id, exerciseId, achievedAt, sessionId',
+      exerciseState: 'exerciseId',
+      settings: 'key',
+      weeklyReviews: 'weekKey',
+    })
+    await v2.open()
+    await v2.table('settings').put({ key: 'installToken', value: 'abc' })
+    await v2.table('exerciseState').put({ exerciseId: 'plank', lastReps: [30], lastDate: '2026-01-01', consecutiveFails: 0, updatedAt: 1 })
+    v2.close()
+
+    const db = new StepUpDB('mig-v2')
+    await db.open()
+    expect(db.verno).toBe(3)
+    expect((await db.settings.get('installToken'))?.value).toBe('abc')
+    expect(await db.exerciseState.count()).toBe(1)
+    await db.customExercises.add({ id: 'custom-x', name: 'X' } as never)
+    expect(await db.customExercises.count()).toBe(1)
     db.close()
   })
 })

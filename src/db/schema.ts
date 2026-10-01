@@ -27,6 +27,7 @@ export class StepUpDB extends Dexie {
   exerciseState!: EntityTable<ExerciseState, 'exerciseId'>
   settings!: EntityTable<SettingRow, 'key'>
   weeklyReviews!: EntityTable<WeeklyReview, 'weekKey'>
+  customExercises!: EntityTable<Exercise, 'id'>
 
   constructor(name = 'stepup-db') {
     super(name)
@@ -57,6 +58,9 @@ export class StepUpDB extends Dexie {
         // The old per-install exercise copy is dead weight now.
         await tx.table('exercises').clear()
       })
+
+    // v3: the person's own exercises
+    this.version(3).stores({ customExercises: 'id' })
   }
 }
 
@@ -98,6 +102,7 @@ const ALL_TABLES = [
   'exerciseState',
   'settings',
   'weeklyReviews',
+  'customExercises',
 ] as const
 
 /** Deletes the whole database (and reopens an empty one) plus every localStorage key StepUp wrote. */

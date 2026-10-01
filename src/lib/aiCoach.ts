@@ -1,5 +1,6 @@
 import { db, getActivePlan, getInstallToken } from '../db/schema'
 import { daysAgoISO, parseISODateLocal, todayISODate } from './format'
+import { isBuiltInExercise } from '../db/exerciseLibrary'
 import { activeWeeksInARow } from './consistency'
 import { isRealPR } from './records'
 import { SKIP_REASONS } from '../../shared/skipReasons'
@@ -37,7 +38,8 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
     }
   }
 
-  const exercises: WeeklyReviewPayload['exercises'] = Array.from(exerciseMap.entries()).map(
+  // the AI server only knows built-in exercises; the person's own stay on the device
+  const exercises: WeeklyReviewPayload['exercises'] = Array.from(exerciseMap.entries()).filter(([id]) => isBuiltInExercise(id)).map(
     ([exerciseId, data]) => {
       const rpes = data.sets.map((s) => s.rpe).filter((r): r is number => typeof r === 'number')
       const avgReps =
@@ -61,7 +63,7 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
       })
     }
   }
-  const skips: WeeklyReviewPayload['skips'] = Array.from(skipCounts.entries()).map(
+  const skips: WeeklyReviewPayload['skips'] = Array.from(skipCounts.entries()).filter(([id]) => isBuiltInExercise(id)).map(
     ([exerciseId, info]) => ({
       exerciseId,
       reason: KNOWN_REASONS.has(info.reason) ? (info.reason as WeeklyReviewPayload['skips'][number]['reason']) : 'unspecified',
@@ -72,7 +74,7 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
   const recentPRs = await db.personalRecords
     .filter((r) => isRealPR(r) && r.achievedAt >= parseISODateLocal(weekAgo).getTime())
     .toArray()
-  const prs: WeeklyReviewPayload['prs'] = recentPRs.map((pr) => ({
+  const prs: WeeklyReviewPayload['prs'] = recentPRs.filter((pr) => isBuiltInExercise(pr.exerciseId) && (pr.kind === undefined || pr.kind === 'e1rm' || pr.kind === 'weight')).map((pr) => ({
     exerciseId: pr.exerciseId,
     value: pr.value,
   }))
