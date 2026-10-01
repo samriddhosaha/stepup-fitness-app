@@ -193,7 +193,7 @@ export default function WorkoutActive() {
     <div className="flex-1 flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <button
-          className="text-sm font-bold text-faint min-h-12 px-2"
+          className="text-sm font-semibold text-faint min-h-12 px-2"
           onClick={() => setShowLeaveConfirm(true)}
         >
           Leave
@@ -202,14 +202,14 @@ export default function WorkoutActive() {
           Exercise {index + 1} / {exerciseIds.length}
         </p>
         <button
-          className="text-sm font-bold text-accent min-h-12 px-2"
+          className="text-sm font-semibold text-accent min-h-12 px-2"
           onClick={() => handleFinish(true)}
         >
           Finish early
         </button>
       </div>
 
-      <h1 className="font-display font-bold text-2xl md:text-3xl mb-1">{currentExercise.name}</h1>
+      <h1 className="font-display font-semibold text-2xl md:text-3xl mb-1">{currentExercise.name}</h1>
       <p className="text-sm text-faint mb-4">
         {setsLogged} of {targetSets} sets · target {plannedExercise?.targetRepsLow}-
         {plannedExercise?.targetRepsHigh} reps
@@ -252,7 +252,7 @@ export default function WorkoutActive() {
 
       {showSwap && (
         <Card className="mb-4">
-          <p className="font-bold mb-3">Same movement, same muscles, kit you actually have</p>
+          <p className="font-semibold mb-3">Same movement, same muscles, kit you actually have</p>
           {substitutes.length === 0 ? (
             <p className="text-sm text-faint">
               There's no close swap available with your equipment.
@@ -262,7 +262,7 @@ export default function WorkoutActive() {
               {substitutes.map((sub) => (
                 <button
                   key={sub.id}
-                  className="w-full text-left font-bold rounded-sm border-2 border-ink px-4 py-3 min-h-12 hover:bg-hairline/40"
+                  className="w-full text-left font-semibold rounded-lg border border-line px-4 py-3 min-h-12 hover:bg-surface"
                   onClick={() => handleSwap(sub.id)}
                 >
                   {sub.name}
@@ -278,12 +278,12 @@ export default function WorkoutActive() {
 
       {showSkip && (
         <Card className="mb-4">
-          <p className="font-bold mb-3">Why skip this one?</p>
+          <p className="font-semibold mb-3">Why skip this one?</p>
           <div className="space-y-2">
             {SKIP_REASONS.map((r) => (
               <button
                 key={r.value}
-                className="w-full text-left font-bold rounded-sm border-2 border-ink px-4 py-3 min-h-12 hover:bg-hairline/40"
+                className="w-full text-left font-semibold rounded-lg border border-line px-4 py-3 min-h-12 hover:bg-surface"
                 onClick={() => handleSkip(r.value)}
               >
                 {r.label}
@@ -301,7 +301,7 @@ export default function WorkoutActive() {
 
       {showLeaveConfirm && (
         <Card className="mb-4">
-          <p className="font-bold mb-2">Leave this workout?</p>
+          <p className="font-semibold mb-2">Leave this workout?</p>
           <p className="text-sm text-faint mb-3">
             Nothing logged so far will be saved.
           </p>
@@ -329,11 +329,11 @@ export default function WorkoutActive() {
                 aria-invalid={Boolean(weightError)}
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
-                className={`w-full rounded-sm border-2 bg-elevated px-3 py-3 min-h-12 text-center text-lg font-bold focus:outline-2 ${
-                  weightError ? 'border-danger focus:outline-danger' : 'border-ink focus:outline-accent'
+                className={`w-full rounded-lg border bg-elevated px-3 py-3 min-h-12 text-center text-lg font-semibold focus:outline-2 ${
+                  weightError ? 'border-danger focus:outline-danger' : 'border-line focus:outline-accent'
                 }`}
               />
-              {weightError && <span className="block text-xs font-bold text-danger mt-1">{weightError}</span>}
+              {weightError && <span className="block text-xs font-semibold text-danger mt-1">{weightError}</span>}
             </label>
             <label className="block">
               <span className="label-eyebrow block text-faint mb-1.5">Reps</span>
@@ -345,11 +345,11 @@ export default function WorkoutActive() {
                 aria-invalid={Boolean(repsError)}
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
-                className={`w-full rounded-sm border-2 bg-elevated px-3 py-3 min-h-12 text-center text-lg font-bold focus:outline-2 ${
-                  repsError ? 'border-danger focus:outline-danger' : 'border-ink focus:outline-accent'
+                className={`w-full rounded-lg border bg-elevated px-3 py-3 min-h-12 text-center text-lg font-semibold focus:outline-2 ${
+                  repsError ? 'border-danger focus:outline-danger' : 'border-line focus:outline-accent'
                 }`}
               />
-              {repsError && <span className="block text-xs font-bold text-danger mt-1">{repsError}</span>}
+              {repsError && <span className="block text-xs font-semibold text-danger mt-1">{repsError}</span>}
             </label>
             <div>
               <span className="label-eyebrow block text-faint mb-1.5">RPE</span>
@@ -360,8 +360,8 @@ export default function WorkoutActive() {
                     aria-label={`RPE ${n}`}
                     aria-pressed={rpe === n}
                     onClick={() => setRpe(n)}
-                    className={`flex-1 min-h-12 rounded-sm text-sm font-bold border-2 border-ink ${
-                      rpe === n ? 'bg-accent text-white' : 'bg-elevated'
+                    className={`flex-1 min-w-0 min-h-12 rounded-lg text-sm font-semibold border border-line ${
+                      rpe === n ? 'bg-accent text-on-accent' : 'bg-elevated'
                     }`}
                   >
                     {n}
@@ -381,7 +381,7 @@ export default function WorkoutActive() {
 
           {restRunning && (
             <Card className="mb-4">
-              <p className="text-center text-3xl font-display font-bold mb-3">
+              <p className="text-center text-3xl font-display font-semibold mb-3">
                 {Math.floor(restSeconds / 60)}:{String(restSeconds % 60).padStart(2, '0')}
               </p>
               <div className="flex gap-3">

@@ -38,7 +38,7 @@ export default function Progress() {
 
   return (
     <div>
-      <h1 className="font-display font-bold text-3xl md:text-4xl mb-6">Progress</h1>
+      <h1 className="font-display font-semibold text-3xl md:text-4xl mb-6">Progress</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
@@ -59,15 +59,15 @@ export default function Progress() {
               placeholder={`Weight (${unitLabel(unit)})`}
               value={weightInput}
               onChange={(e) => setWeightInput(e.target.value)}
-              className={`flex-1 rounded-sm border-2 bg-elevated px-4 min-h-12 focus:outline-2 ${
-                weightError ? 'border-danger focus:outline-danger' : 'border-ink focus:outline-accent'
+              className={`flex-1 rounded-lg border bg-elevated px-4 min-h-12 focus:outline-2 ${
+                weightError ? 'border-danger focus:outline-danger' : 'border-line focus:outline-accent'
               }`}
             />
             <Button onClick={logBodyWeight} disabled={!weightInput || Boolean(weightError)}>
               Log
             </Button>
           </div>
-          {weightError && <p className="text-xs font-bold text-danger mt-2">{weightError}</p>}
+          {weightError && <p className="text-xs font-semibold text-danger mt-2">{weightError}</p>}
         </Card>
 
         <Card>
@@ -85,7 +85,7 @@ export default function Progress() {
               aria-label="Select lift for progression chart"
               value={selectedLift}
               onChange={(e) => setSelectedLift(e.target.value)}
-              className="text-sm font-bold rounded-sm border-2 border-ink bg-elevated px-2 py-1.5 self-start sm:self-auto"
+              className="text-sm font-semibold rounded-lg border border-line bg-elevated px-2 py-1.5 self-start sm:self-auto"
             >
               {liftOptions.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -108,8 +108,8 @@ export default function Progress() {
           ) : (
             <ul className="space-y-2">
               {prs.map((pr) => (
-                <li key={pr.id} className="flex justify-between text-sm border-b border-hairline pb-2 last:border-0 last:pb-0">
-                  <span className="font-bold">
+                <li key={pr.id} className="flex justify-between text-sm border-b border-dotted border-hairline pb-2 last:border-0 last:pb-0">
+                  <span className="font-semibold">
                     {EXERCISE_LIBRARY.find((e) => e.id === pr.exerciseId)?.name ?? pr.exerciseId}
                   </span>
                   <span className="text-faint">{pr.value} kg est.</span>

@@ -55,19 +55,19 @@ export default function History() {
         <div className="flex items-center justify-between mb-6">
           <button
             aria-label="Previous month"
-            className="min-h-12 min-w-12 flex items-center justify-center border-2 border-ink"
+            className="min-h-12 min-w-12 flex items-center justify-center rounded-lg border border-line"
             onClick={() =>
               setViewedMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))
             }
           >
             <ChevronLeft size={20} />
           </button>
-          <h1 className="font-display font-bold text-xl">
+          <h1 className="font-display font-semibold text-xl">
             {viewedMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
           </h1>
           <button
             aria-label="Next month"
-            className="min-h-12 min-w-12 flex items-center justify-center border-2 border-ink"
+            className="min-h-12 min-w-12 flex items-center justify-center rounded-lg border border-line"
             onClick={() =>
               setViewedMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))
             }
@@ -96,7 +96,7 @@ export default function History() {
               <button
                 key={cell.date}
                 onClick={() => setSelected(cell.date)}
-                className={`aspect-square flex flex-col items-center justify-center text-xs font-bold min-h-11 border-2 ${
+                className={`aspect-square flex flex-col items-center justify-center rounded-lg text-xs font-semibold min-h-11 border ${
                   cell.date === today ? 'border-accent' : 'border-transparent'
                 } ${cell.date === selected ? 'bg-hairline/40' : ''}`}
               >
@@ -126,7 +126,7 @@ export default function History() {
             {selectedSessions && selectedSessions.length > 0 ? (
               selectedSessions.map((s) => (
                 <div key={s.id}>
-                  <p className="font-bold">{s.planSessionName}</p>
+                  <p className="font-semibold">{s.planSessionName}</p>
                   <p className="text-sm text-faint">
                     {s.completedAt ? 'Workout completed.' : 'Workout planned. Not completed.'}
                   </p>

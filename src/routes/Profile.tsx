@@ -60,11 +60,11 @@ export default function Profile() {
 
   return (
     <div>
-      <h1 className="font-display font-bold text-3xl md:text-4xl mb-6">Profile</h1>
+      <h1 className="font-display font-semibold text-3xl md:text-4xl mb-6">Profile</h1>
 
       <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-2 md:gap-6 md:items-start">
         <Card className="md:col-span-2">
-          <p className="font-bold mb-1">{profile.name}</p>
+          <p className="font-semibold mb-1">{profile.name}</p>
           <p className="text-sm text-faint mb-3">
             {profile.daysPerWeek} days a week · {profile.sessionLengthMinutes} min sessions
           </p>
@@ -105,12 +105,12 @@ export default function Profile() {
               onClick={() =>
                 activeProfile.aiCoachEnabled ? setAICoachEnabled(false) : setConfirmingAICoach(true)
               }
-              className={`w-12 h-7 border-2 border-ink relative transition-colors ${
+              className={`w-12 h-7 rounded-full border border-line relative transition-colors ${
                 activeProfile.aiCoachEnabled ? 'bg-accent' : 'bg-elevated'
               }`}
             >
               <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 border-2 border-ink bg-elevated transition-transform ${
+                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full border border-line bg-elevated transition-transform ${
                   activeProfile.aiCoachEnabled ? 'translate-x-4' : ''
                 }`}
               />
@@ -121,7 +121,7 @@ export default function Profile() {
             review. Off by default.
           </p>
           {confirmingAICoach && (
-            <div className="mt-4 pt-4 border-t-2 border-ink">
+            <div className="mt-4 pt-4 border-t-2 border-line">
               <p className="text-sm mb-3">{AI_COACH_CONSENT_COPY}</p>
               <div className="flex gap-3">
                 <Button variant="ghost" className="flex-1" onClick={() => setConfirmingAICoach(false)}>
@@ -159,7 +159,7 @@ export default function Profile() {
           {importMessage && <p className="text-sm text-faint mt-3">{importMessage}</p>}
         </Card>
 
-        <Link to="/guide" className="md:col-span-2 block text-sm font-bold text-accent">
+        <Link to="/guide" className="md:col-span-2 block text-sm font-semibold text-accent">
           How StepUp works
         </Link>
 

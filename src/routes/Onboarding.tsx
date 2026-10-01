@@ -172,7 +172,7 @@ export default function Onboarding() {
           <button
             aria-label="Previous step"
             onClick={() => setStep((s) => s - 1)}
-            className="min-h-12 min-w-12 flex items-center justify-center border-2 border-ink hover:bg-hairline/40"
+            className="min-h-12 min-w-12 flex items-center justify-center rounded-lg border border-line hover:bg-surface"
           >
             <ChevronLeft size={22} />
           </button>
@@ -430,18 +430,18 @@ export default function Onboarding() {
                   Anything you'd rather not do
                 </span>
                 <textarea
-                  className="w-full rounded-sm border-2 border-ink bg-elevated px-4 py-3 text-ink min-h-24 focus:outline-2 focus:outline-accent"
+                  className="w-full rounded-lg border border-line bg-elevated px-4 py-3 text-ink min-h-24 focus:outline-2 focus:outline-accent"
                   value={draft.exclusions}
                   onChange={(e) => setDraft((d) => ({ ...d, exclusions: e.target.value }))}
                 />
               </label>
               <label className="block">
-                <span className="block text-sm font-bold text-ink mb-2">
+                <span className="block text-sm font-semibold text-ink mb-2">
                   Injuries or anything else we should work around — we'll
                   leave these out of your plan entirely.
                 </span>
                 <textarea
-                  className="w-full rounded-sm border-2 border-ink bg-elevated px-4 py-3 text-ink min-h-24 focus:outline-2 focus:outline-accent"
+                  className="w-full rounded-lg border border-line bg-elevated px-4 py-3 text-ink min-h-24 focus:outline-2 focus:outline-accent"
                   value={draft.injuries}
                   onChange={(e) => setDraft((d) => ({ ...d, injuries: e.target.value }))}
                 />
@@ -469,7 +469,7 @@ export default function Onboarding() {
 function StepBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <h1 className="font-display font-bold text-2xl md:text-3xl mb-6">{title}</h1>
+      <h1 className="font-display font-semibold text-2xl md:text-3xl mb-6">{title}</h1>
       {children}
     </div>
   )

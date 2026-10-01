@@ -35,18 +35,18 @@ await page.waitForURL('**/dashboard')
 
 await page.goto('http://localhost:5173/profile')
 await page.waitForSelector('text=AI weekly coach')
-await shot('18-profile-ai-toggle-off')
+await page.waitForTimeout(700); await shot('18-profile-ai-toggle-off')
 
 await page.click('role=switch')
 await page.waitForSelector('text=Nothing else is sent')
-await shot('19-ai-consent')
+await page.waitForTimeout(700); await shot('19-ai-consent')
 await page.click('text=Turn on')
 await page.waitForTimeout(300)
-await shot('20-ai-toggle-on')
+await page.waitForTimeout(700); await shot('20-ai-toggle-on')
 
 await page.goto('http://localhost:5173/dashboard')
 await page.waitForTimeout(1500)
-await shot('21-dashboard-ai-fallback')
+await page.waitForTimeout(700); await shot('21-dashboard-ai-fallback')
 
 console.log('ERRORS:', JSON.stringify(errors))
 await browser.close()

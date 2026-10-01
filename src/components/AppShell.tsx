@@ -18,9 +18,9 @@ export function AppShell() {
     <div className="min-h-screen flex flex-col md:flex-row bg-canvas">
       {/* Desktop/tablet: persistent sidebar. Hidden below md, where the
           bottom tab bar (below) takes over. */}
-      <aside className="hidden md:flex md:flex-col md:w-60 md:shrink-0 md:border-r-2 md:border-ink md:sticky md:top-0 md:h-screen">
-        <div className="px-6 py-7 border-b-2 border-ink">
-          <span className="font-display font-bold text-2xl leading-none">StepUp</span>
+      <aside className="hidden md:flex md:flex-col md:w-60 md:shrink-0 md:border-r-2 md:border-line md:sticky md:top-0 md:h-screen">
+        <div className="px-6 py-7 border-b-2 border-line">
+          <span className="font-display font-semibold text-2xl leading-none">StepUp</span>
         </div>
         <ul className="flex-1 py-4">
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
@@ -28,10 +28,10 @@ export function AppShell() {
               <NavLink
                 to={to}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-3 mb-1 text-sm font-bold border-2 ${
+                  `flex items-center gap-3 px-3 py-3 mb-1 rounded-lg text-sm font-semibold border ${
                     isActive
-                      ? 'bg-accent text-white border-ink'
-                      : 'border-transparent text-ink hover:border-ink'
+                      ? 'bg-accent text-on-accent border-line'
+                      : 'border-transparent text-ink hover:border-line'
                   }`
                 }
               >
@@ -50,7 +50,7 @@ export function AppShell() {
       {/* Mobile: bottom tab bar. Hidden at md and above, where the sidebar
           (above) takes over. */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 bg-elevated border-t-2 border-ink max-w-lg mx-auto w-full"
+        className="md:hidden fixed bottom-0 inset-x-0 bg-elevated border-t-2 border-line max-w-lg mx-auto w-full"
         aria-label="Primary"
       >
         <ul className="flex justify-between px-2 py-2">
@@ -59,8 +59,8 @@ export function AppShell() {
               <NavLink
                 to={to}
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-1 min-h-12 justify-center mx-1 py-1.5 text-xs font-bold border-2 ${
-                    isActive ? 'bg-accent text-white border-ink' : 'border-transparent text-faint'
+                  `flex flex-col items-center gap-1 min-h-12 justify-center mx-1 py-1.5 rounded-lg text-xs font-semibold border ${
+                    isActive ? 'bg-accent text-on-accent border-line' : 'border-transparent text-faint'
                   }`
                 }
               >

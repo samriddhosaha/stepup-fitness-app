@@ -88,7 +88,7 @@ export default function Dashboard() {
           <Card>
             {todays ? (
               <>
-                <p className="font-display font-bold text-2xl mb-1">{todays.name}</p>
+                <p className="font-display font-semibold text-2xl mb-1">{todays.name}</p>
                 <p className="text-sm text-faint mb-4">Nothing to prove today. Just begin.</p>
                 <Button className="w-full md:w-auto" onClick={begin}>
                   Start workout
@@ -96,7 +96,7 @@ export default function Dashboard() {
               </>
             ) : (
               <>
-                <p className="font-display font-bold text-2xl mb-1">Nothing scheduled.</p>
+                <p className="font-display font-semibold text-2xl mb-1">Nothing scheduled.</p>
                 <p className="text-sm text-faint mb-4">A rest day.</p>
                 <Button
                   variant="secondary"
@@ -127,7 +127,7 @@ export default function Dashboard() {
           {streak > 0 && (
             <Card>
               <p className="label-eyebrow text-faint mb-1">Streak</p>
-              <p className="font-display font-bold text-3xl">{streak}</p>
+              <p className="font-display font-semibold text-3xl">{streak}</p>
             </Card>
           )}
 
@@ -139,18 +139,18 @@ export default function Dashboard() {
           {latestPR && (
             <Card className="bg-accent-soft">
               <p className="label-eyebrow text-faint mb-1">New personal best</p>
-              <p className="text-sm font-bold">{getExerciseById(latestPR.exerciseId)?.name}</p>
+              <p className="text-sm font-semibold">{getExerciseById(latestPR.exerciseId)?.name}</p>
             </Card>
           )}
 
           <div className="flex flex-col gap-2 pt-2">
-            <Link to="/progress/xp" className="text-sm font-bold text-accent">
+            <Link to="/progress/xp" className="text-sm font-semibold text-accent">
               XP & level →
             </Link>
-            <Link to="/history" className="text-sm font-bold text-accent">
+            <Link to="/history" className="text-sm font-semibold text-accent">
               Full history →
             </Link>
-            <Link to="/guide" className="text-sm font-bold text-accent">
+            <Link to="/guide" className="text-sm font-semibold text-accent">
               How StepUp works →
             </Link>
           </div>

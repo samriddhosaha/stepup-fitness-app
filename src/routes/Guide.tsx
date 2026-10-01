@@ -34,11 +34,11 @@ export default function Guide() {
       >
         <ChevronLeft size={18} /> Back
       </button>
-      <h1 className="font-display font-bold text-2xl md:text-3xl mb-8">How StepUp works</h1>
+      <h1 className="font-display font-semibold text-2xl md:text-3xl mb-8">How StepUp works</h1>
       <div>
         {SECTIONS.map((s) => (
-          <div key={s.title} className="border-t-2 border-ink py-5 first:pt-0">
-            <p className="font-bold mb-1">{s.title}</p>
+          <div key={s.title} className="border-t-2 border-line py-5 first:pt-0">
+            <p className="font-semibold mb-1">{s.title}</p>
             <p className="text-sm text-faint">{s.body}</p>
           </div>
         ))}

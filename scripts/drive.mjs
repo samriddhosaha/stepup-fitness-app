@@ -16,7 +16,7 @@ async function shot(name) {
 
 await page.goto('http://localhost:5173')
 await page.waitForSelector('text=Get started', { timeout: 15000 })
-await shot('01-welcome')
+await page.waitForTimeout(700); await shot('01-welcome')
 
 await page.click('text=Get started')
 await page.waitForSelector('text=What should we call you?')
@@ -58,15 +58,15 @@ await page.click('text=Continue')
 
 // Step 9: exclusions/injuries + disclaimer
 await page.waitForSelector('text=Anything to work around?')
-await shot('02-onboarding-step9')
+await page.waitForTimeout(700); await shot('02-onboarding-step9')
 await page.click('text=Build my plan')
 
 await page.waitForSelector('text=Your plan is ready.', { timeout: 15000 })
-await shot('03-plan-ready')
+await page.waitForTimeout(700); await shot('03-plan-ready')
 await page.click('text=See my plan')
 
 await page.waitForURL('**/dashboard', { timeout: 15000 })
-await shot('04-dashboard')
+await page.waitForTimeout(700); await shot('04-dashboard')
 
 // Start workout from dashboard. If today is a rest day, the dashboard's
 // "Train anyway" goes to the /workout overview first, which needs a second
@@ -78,7 +78,7 @@ await dashboardStart.first().click()
 await page.waitForTimeout(500)
 
 if (!(await page.locator('text=Exercise 1 /').isVisible().catch(() => false))) {
-  await shot('04b-workout-overview')
+  await page.waitForTimeout(700); await shot('04b-workout-overview')
   const sessionStart = page.locator(
     'button:has-text("Start workout"), button:has-text("Train anyway")',
   )
@@ -86,7 +86,7 @@ if (!(await page.locator('text=Exercise 1 /').isVisible().catch(() => false))) {
 }
 
 await page.waitForSelector('text=Exercise 1 /', { timeout: 15000 })
-await shot('05-workout-active')
+await page.waitForTimeout(700); await shot('05-workout-active')
 
 // Log a set
 await page.fill('input[inputmode="decimal"]', '20')
@@ -94,7 +94,7 @@ await page.fill('input[inputmode="numeric"]', '10')
 await page.click('button[aria-label="RPE 3"]')
 await page.click('text=Complete set')
 await page.waitForSelector('text=Skip rest', { timeout: 5000 })
-await shot('06-rest-timer')
+await page.waitForTimeout(700); await shot('06-rest-timer')
 
 await browser_close_check()
 
@@ -108,9 +108,9 @@ for (const [path, , name] of [
 ]) {
   await page.goto(`http://localhost:5173${path}`)
   await page.waitForTimeout(1000)
-  if (name) await shot(name)
+  if (name) await page.waitForTimeout(700); await shot(name)
 }
-await shot('08-history')
+await page.waitForTimeout(700); await shot('08-history')
 
 console.log('CONSOLE_ERRORS:', JSON.stringify(errors))
 

@@ -62,7 +62,7 @@ async function completeExercise() {
 
 await onboard()
 await beginWorkout()
-await shot('11-first-exercise')
+await page.waitForTimeout(700); await shot('11-first-exercise')
 
 // Drive through all exercises until we land on the complete screen
 for (let guard = 0; guard < 10; guard++) {
@@ -73,25 +73,25 @@ for (let guard = 0; guard < 10; guard++) {
 }
 
 await page.waitForSelector('text=Workout complete.', { timeout: 10000 })
-await shot('12-workout-complete')
+await page.waitForTimeout(700); await shot('12-workout-complete')
 
 await page.click('text=Back to dashboard')
 await page.waitForURL('**/dashboard')
-await shot('13-dashboard-after')
+await page.waitForTimeout(700); await shot('13-dashboard-after')
 
 await page.goto('http://localhost:5173/progress/xp')
 await page.waitForTimeout(500)
-await shot('14-xp')
+await page.waitForTimeout(700); await shot('14-xp')
 
 // Dark mode
 await page.goto('http://localhost:5173/profile')
 await page.waitForTimeout(300)
 await page.click('text=Dark')
 await page.waitForTimeout(300)
-await shot('15-profile-dark')
+await page.waitForTimeout(700); await shot('15-profile-dark')
 await page.goto('http://localhost:5173/dashboard')
 await page.waitForTimeout(300)
-await shot('16-dashboard-dark')
+await page.waitForTimeout(700); await shot('16-dashboard-dark')
 
 console.log('ERRORS:', JSON.stringify(errors))
 await browser.close()

@@ -75,7 +75,7 @@ export default function ProfileEdit() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <h1 className="font-display font-bold text-2xl md:text-3xl mb-6">Edit preferences</h1>
+      <h1 className="font-display font-semibold text-2xl md:text-3xl mb-6">Edit preferences</h1>
 
       <div className="flex-1 space-y-6 overflow-y-auto">
         <TextField
@@ -184,7 +184,7 @@ export default function ProfileEdit() {
         <label className="block">
           <span className="label-eyebrow block text-faint mb-2">Exclusions</span>
           <textarea
-            className="w-full rounded-sm border-2 border-ink bg-elevated px-4 py-3 min-h-20"
+            className="w-full rounded-lg border border-line bg-elevated px-4 py-3 min-h-20"
             value={draft.exclusions ?? ''}
             onChange={(e) => setDraft({ ...draft, exclusions: e.target.value })}
           />
@@ -192,7 +192,7 @@ export default function ProfileEdit() {
         <label className="block">
           <span className="label-eyebrow block text-faint mb-2">Injuries</span>
           <textarea
-            className="w-full rounded-sm border-2 border-ink bg-elevated px-4 py-3 min-h-20"
+            className="w-full rounded-lg border border-line bg-elevated px-4 py-3 min-h-20"
             value={draft.injuries ?? ''}
             onChange={(e) => setDraft({ ...draft, injuries: e.target.value })}
           />
@@ -201,7 +201,7 @@ export default function ProfileEdit() {
 
       {showRebuildChoice ? (
         <Card className="mt-4">
-          <p className="font-bold mb-2">Update your plan too?</p>
+          <p className="font-semibold mb-2">Update your plan too?</p>
           <p className="text-sm text-faint mb-4">
             These changes affect what your plan can include. Rebuild it to
             match, or keep your current plan as-is.

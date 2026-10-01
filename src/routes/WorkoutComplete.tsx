@@ -46,7 +46,7 @@ export default function WorkoutComplete() {
   return (
     <div className="flex-1 flex flex-col justify-between py-10">
       <div>
-        <p className="font-display font-bold text-3xl md:text-4xl mb-2">Workout complete.</p>
+        <p className="font-display font-semibold text-3xl md:text-4xl mb-2">Workout complete.</p>
         <p className="text-faint">
           {session.finishedEarly ? 'Finished early — still counts.' : 'You showed up. That’s the whole job.'}
         </p>
@@ -56,11 +56,11 @@ export default function WorkoutComplete() {
         <Card>
           <div className="flex justify-between text-sm">
             <span className="label-eyebrow text-faint">Duration</span>
-            <span className="font-bold">{formatDuration(session.durationSeconds ?? 0)}</span>
+            <span className="font-semibold">{formatDuration(session.durationSeconds ?? 0)}</span>
           </div>
           <div className="flex justify-between text-sm mt-2">
             <span className="label-eyebrow text-faint">Sets logged</span>
-            <span className="font-bold">{totalSets}</span>
+            <span className="font-semibold">{totalSets}</span>
           </div>
         </Card>
 
@@ -68,7 +68,7 @@ export default function WorkoutComplete() {
           <Card className="bg-accent-soft">
             <p className="label-eyebrow text-faint mb-2">New personal best</p>
             {prs.map((pr) => (
-              <p key={pr.id} className="text-sm font-bold">
+              <p key={pr.id} className="text-sm font-semibold">
                 {getExerciseById(pr.exerciseId)?.name} — {pr.value} kg est.
               </p>
             ))}
@@ -77,7 +77,7 @@ export default function WorkoutComplete() {
 
         {showNotificationAsk && (
           <Card>
-            <p className="text-sm font-bold mb-1">Get reminded, gently</p>
+            <p className="text-sm font-semibold mb-1">Get reminded, gently</p>
             <p className="text-xs text-faint mb-3">
               A quiet nudge if a scheduled day passes without a workout, or
               your streak is about to lapse. Nothing else.

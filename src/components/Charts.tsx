@@ -33,9 +33,9 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-sm border-2 border-ink bg-elevated px-3 py-2 text-xs">
+    <div className="rounded-lg border border-line bg-elevated px-3 py-2 text-xs">
       <p className="label-eyebrow text-faint mb-1">{label}</p>
-      <p className="font-bold text-ink">
+      <p className="font-semibold text-ink">
         {payload[0].value}
         {unit ? ` ${unit}` : ''}
       </p>

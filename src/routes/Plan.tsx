@@ -19,10 +19,10 @@ export default function Plan() {
 
   return (
     <div>
-      <h1 className="font-display font-bold text-3xl md:text-4xl mb-6">Your plan</h1>
+      <h1 className="font-display font-semibold text-3xl md:text-4xl mb-6">Your plan</h1>
 
       {plan.volumeUneven && (
-        <div className="border-2 border-ink bg-warning/10 px-4 py-3 text-sm font-bold mb-6">
+        <div className="rounded-lg border border-line bg-warning/10 px-4 py-3 text-sm font-semibold mb-6">
           Pushing and pulling volume are uneven in this plan.
         </div>
       )}
@@ -31,7 +31,7 @@ export default function Plan() {
         {sorted.map((session) => (
           <Card key={session.name + session.dayIndex}>
             <p className="label-eyebrow text-faint mb-1">{DAY_NAMES[session.dayIndex]}</p>
-            <p className="font-display font-bold text-lg mb-3">{session.name}</p>
+            <p className="font-display font-semibold text-lg mb-3">{session.name}</p>
             <ul className="space-y-1.5">
               {session.exercises.map((pe) => {
                 const exercise = getExerciseById(pe.exerciseId)
@@ -49,7 +49,7 @@ export default function Plan() {
         ))}
       </div>
 
-      <Link to="/profile/edit" className="block text-center text-sm font-bold text-accent mt-6">
+      <Link to="/profile/edit" className="block text-center text-sm font-semibold text-accent mt-6">
         Edit training preferences
       </Link>
     </div>

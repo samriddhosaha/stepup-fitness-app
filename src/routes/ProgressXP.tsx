@@ -27,7 +27,7 @@ export default function ProgressXP() {
 
   return (
     <div>
-      <Link to="/progress" className="text-sm font-bold text-faint">
+      <Link to="/progress" className="text-sm font-semibold text-faint">
         ← Progress
       </Link>
 
@@ -35,8 +35,8 @@ export default function ProgressXP() {
         <div className="md:col-span-1">
           <Card>
             <p className="label-eyebrow text-faint mb-1">{progress.rank}</p>
-            <p className="font-display font-bold text-3xl mb-3">Level {progress.level}</p>
-            <div className="h-2 border-2 border-ink overflow-hidden">
+            <p className="font-display font-semibold text-3xl mb-3">Level {progress.level}</p>
+            <div className="h-2 rounded-full border border-line overflow-hidden">
               <div className="h-full bg-accent" style={{ width: `${percent}%` }} />
             </div>
             <p className="text-xs text-faint mt-2">
@@ -49,9 +49,9 @@ export default function ProgressXP() {
           <p className="label-eyebrow text-faint mb-3">History</p>
           <ul>
             {events.slice(0, 50).map((e) => (
-              <li key={e.id} className="flex justify-between text-sm py-2 border-b border-hairline">
-                <span className="font-bold">{XP_LABELS[e.type] ?? e.type}</span>
-                <span className={e.amount < 0 ? 'text-danger font-bold' : 'text-accent font-bold'}>
+              <li key={e.id} className="flex justify-between text-sm py-2 border-b border-dotted border-hairline">
+                <span className="font-semibold">{XP_LABELS[e.type] ?? e.type}</span>
+                <span className={e.amount < 0 ? 'text-danger font-semibold' : 'text-accent font-semibold'}>
                   {e.amount > 0 ? '+' : ''}
                   {e.amount} XP
                 </span>

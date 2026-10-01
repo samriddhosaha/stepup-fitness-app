@@ -1,10 +1,11 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/fraunces';
+@import '@fontsource-variable/inter';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
 
 /*
- * Design tokens: neo-brutalist editorial system — Swiss-grid structure,
- * bold type, strong (2px) ink borders, near-zero corner radius, and a
- * signature hard offset "block" shadow instead of any blurred/soft shadow.
+ * Design tokens: clean system — Inter + IBM Plex Mono, pale blue canvas, navy
+ * ink with 1px borders, lime highlight, solid offset-shadow cards.
  *
  * NOTE on --c-faint: the audit-spec values (light 156/152/145, dark 115/112/108)
  * fail WCAG AA (4.5:1) against canvas/elevated in both themes when checked against
@@ -12,16 +13,18 @@
  * family until they clear 4.5:1 against both canvas and elevated in their theme.
  */
 :root {
-  --c-canvas: 250 249 247;
+  --c-canvas: 236 243 247;
   --c-elevated: 255 255 255;
-  --c-ink: 15 15 13;
-  --c-faint: 90 87 81;
-  --c-line: 15 15 13;
-  --c-hairline: 214 209 200;
-  --c-accent: 79 70 229;
-  --c-accent-soft: 238 238 253;
-  --c-warning: 186 118 8;
-  --c-danger: 199 44 44;
+  --c-surface: 245 252 255;
+  --c-ink: 16 22 47;
+  --c-faint: 76 80 99;
+  --c-line: 16 22 47;
+  --c-hairline: 181 187 197;
+  --c-accent: 16 22 47;
+  --c-accent-soft: 234 253 198;
+  --c-on-accent: 255 255 255;
+  --c-warning: 160 100 0;
+  --c-danger: 200 40 40;
   --c-danger-soft: 253 232 232;
 
   color-scheme: light;
@@ -29,17 +32,19 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --c-canvas: 14 14 16;
-    --c-elevated: 26 26 29;
-    --c-ink: 244 243 241;
-    --c-faint: 158 154 147;
-    --c-line: 244 243 241;
-    --c-hairline: 58 57 54;
-    --c-accent: 145 150 255;
-    --c-accent-soft: 38 39 72;
-    --c-warning: 232 168 60;
-    --c-danger: 248 113 113;
-    --c-danger-soft: 58 26 26;
+    --c-canvas: 16 22 47;
+  --c-elevated: 27 35 68;
+  --c-surface: 34 43 80;
+  --c-ink: 245 252 255;
+  --c-faint: 160 170 196;
+  --c-line: 96 108 148;
+  --c-hairline: 52 62 98;
+  --c-accent: 234 253 198;
+  --c-accent-soft: 46 58 52;
+  --c-on-accent: 16 22 47;
+  --c-warning: 232 168 60;
+  --c-danger: 248 113 113;
+  --c-danger-soft: 58 26 26;
 
     color-scheme: dark;
   }
@@ -47,30 +52,34 @@
 
 /* Explicit overrides for the Profile > Appearance setting (light/dark/system) */
 [data-theme='light'] {
-  --c-canvas: 250 249 247;
+  --c-canvas: 236 243 247;
   --c-elevated: 255 255 255;
-  --c-ink: 15 15 13;
-  --c-faint: 90 87 81;
-  --c-line: 15 15 13;
-  --c-hairline: 214 209 200;
-  --c-accent: 79 70 229;
-  --c-accent-soft: 238 238 253;
-  --c-warning: 186 118 8;
-  --c-danger: 199 44 44;
+  --c-surface: 245 252 255;
+  --c-ink: 16 22 47;
+  --c-faint: 76 80 99;
+  --c-line: 16 22 47;
+  --c-hairline: 181 187 197;
+  --c-accent: 16 22 47;
+  --c-accent-soft: 234 253 198;
+  --c-on-accent: 255 255 255;
+  --c-warning: 160 100 0;
+  --c-danger: 200 40 40;
   --c-danger-soft: 253 232 232;
 
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --c-canvas: 14 14 16;
-  --c-elevated: 26 26 29;
-  --c-ink: 244 243 241;
-  --c-faint: 158 154 147;
-  --c-line: 244 243 241;
-  --c-hairline: 58 57 54;
-  --c-accent: 145 150 255;
-  --c-accent-soft: 38 39 72;
+  --c-canvas: 16 22 47;
+  --c-elevated: 27 35 68;
+  --c-surface: 34 43 80;
+  --c-ink: 245 252 255;
+  --c-faint: 160 170 196;
+  --c-line: 96 108 148;
+  --c-hairline: 52 62 98;
+  --c-accent: 234 253 198;
+  --c-accent-soft: 46 58 52;
+  --c-on-accent: 16 22 47;
   --c-warning: 232 168 60;
   --c-danger: 248 113 113;
   --c-danger-soft: 58 26 26;
@@ -80,6 +89,7 @@
 
 @theme {
   --color-canvas: rgb(var(--c-canvas));
+  --color-surface: rgb(var(--c-surface));
   --color-elevated: rgb(var(--c-elevated));
   --color-ink: rgb(var(--c-ink));
   --color-faint: rgb(var(--c-faint));
@@ -87,21 +97,22 @@
   --color-hairline: rgb(var(--c-hairline));
   --color-accent: rgb(var(--c-accent));
   --color-accent-soft: rgb(var(--c-accent-soft));
+  --color-on-accent: rgb(var(--c-on-accent));
   --color-warning: rgb(var(--c-warning));
   --color-danger: rgb(var(--c-danger));
   --color-danger-soft: rgb(var(--c-danger-soft));
 
-  --font-sans:
-    -apple-system, 'Segoe UI Variable Display', 'Segoe UI', Inter, Roboto, sans-serif;
-  --font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
+  --font-sans: 'Inter Variable', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  --font-display: 'Inter Variable', -apple-system, 'Segoe UI', sans-serif;
 
   /* Near-zero throughout — the one deliberate exception is status dots,
      which stay tiny filled squares (see components below), never circles. */
-  --radius-sm: 0px;
-  --radius-md: 2px;
-  --radius-lg: 3px;
-  --radius-xl: 4px;
-  --radius-pill: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-pill: 999px;
 }
 
 @layer base {
@@ -113,42 +124,39 @@
 
   body {
     font-family: var(--font-sans);
-    font-weight: 500;
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
   }
 
   .font-display {
     font-family: var(--font-display);
-    font-variation-settings: 'opsz' 36;
-    letter-spacing: -0.01em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 
   /* Swiss-grid "eyebrow" label — small, uppercase, tracked, bold. Used for
      section labels, step counters, card headers: the structural device that
      replaces soft/faint captions with a firm typographic hierarchy. */
   .label-eyebrow {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0;
   }
 }
 
 @layer components {
-  /* The signature neo-brutalist device: a hard, non-blurred offset block —
-     a graphic element, not a simulated light source. Shrinks and the
-     element nudges toward it on press, reading as a physical push. */
-  .brutal-shadow {
-    box-shadow: 4px 4px 0 0 rgb(var(--c-ink));
+  /* Solid offset block, as in the reference */
+  .shadow-soft {
+    box-shadow: -5px 5px 0 0 rgb(var(--c-line));
   }
-  .brutal-shadow-sm {
-    box-shadow: 2px 2px 0 0 rgb(var(--c-ink));
+  .shadow-soft-sm {
+    box-shadow: -4px 4px 0 0 rgb(var(--c-line));
   }
-  .brutal-press {
+  .press {
     transition: transform 0.1s ease, box-shadow 0.1s ease;
   }
-  .brutal-press:active {
-    transform: translate(4px, 4px);
-    box-shadow: 0 0 0 0 rgb(var(--c-ink)) !important;
+  .press:active {
+    transform: scale(0.98);
   }
 }
