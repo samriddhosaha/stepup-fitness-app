@@ -1,6 +1,7 @@
-import { db, getActivePlan } from '../db/schema'
-import { daysAgoISO, parseISODateLocal } from './format'
-import { computeStreak } from './streak'
+import { db, getActivePlan, getInstallToken } from '../db/schema'
+import { daysAgoISO, parseISODateLocal, todayISODate } from './format'
+import { activeWeeksInARow } from './consistency'
+import { isRealPR } from './records'
 import { SKIP_REASONS } from '../../shared/skipReasons'
 import type { WeeklyReviewPayload } from '../../shared/weeklyReviewSchema'
 
@@ -69,7 +70,7 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
   )
 
   const recentPRs = await db.personalRecords
-    .filter((r) => r.achievedAt >= parseISODateLocal(weekAgo).getTime())
+    .filter((r) => isRealPR(r) && r.achievedAt >= parseISODateLocal(weekAgo).getTime())
     .toArray()
   const prs: WeeklyReviewPayload['prs'] = recentPRs.map((pr) => ({
     exerciseId: pr.exerciseId,
@@ -89,20 +90,25 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
     exercises,
     skips,
     prs,
-    streak: computeStreak(plan, sessions),
+    activeWeeksInARow: activeWeeksInARow(await db.workoutSessions.toArray(), todayISODate()),
     bodyWeightTrendKg,
   }
 }
 
+export const AI_REQUEST_TIMEOUT_MS = 8000
+
 export async function requestAIWeeklyReview(payload: WeeklyReviewPayload): Promise<string> {
   const response = await fetch('/api/weekly-review', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-stepup-install': await getInstallToken() },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
   })
   if (!response.ok) {
     throw new Error(`AI review request failed with status ${response.status}`)
   }
-  const data = (await response.json()) as { review: string }
-  return data.review
+  const data: unknown = await response.json()
+  const review = (data as { review?: unknown } | null)?.review
+  if (typeof review !== 'string' || !review.trim()) throw new Error('AI review response was empty')
+  return review
 }
