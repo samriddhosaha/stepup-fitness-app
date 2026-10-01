@@ -300,9 +300,14 @@ function buildStrengthSession(
   }
   for (const slot of slots) tryAdd(slot)
   // slots can come up empty (injuries, kit): top up so the session is still worth doing
-  for (const slot of FILL) {
-    if (main.length >= Math.min(wanted, MAX_EXERCISES)) break
-    tryAdd(slot)
+  // top up with whichever side (push or pull) the session is light on, so gaps never skew the plan
+  const fill = [...FILL]
+  while (main.length < Math.min(wanted, MAX_EXERCISES) && fill.length > 0) {
+    const { push, pull } = volumeBySide(main)
+    const lacking = push < pull ? 'push' : 'pull'
+    const idx = Math.max(0, fill.findIndex((s) => (s.group && (PUSH_GROUPS.has(s.group) ? 'push' : PULL_GROUPS.has(s.group) ? 'pull' : null)) === lacking))
+    const [slot] = fill.splice(idx, 1)
+    tryAdd(slot!)
   }
   if (main.length === 0) {
     // last resort: anything permitted and gentle, so a session is never empty
@@ -456,7 +461,9 @@ export function generatePlan(profile: Profile): Plan {
     }
   }
 
-  return { createdAt: Date.now(), sessions, volumeUneven: isUneven(sessions) }
+  const plan: Plan = { createdAt: Date.now(), sessions, volumeUneven: isUneven(sessions) }
+  // gaps left by injuries or kit can still skew pushing and pulling: even it out before anyone sees it
+  return plan.volumeUneven ? balancePlan(plan, profile) : plan
 }
 
 // ---------------------------------------------------------------------------
@@ -533,6 +540,8 @@ export function balancePlan(plan: Plan, profile: Profile): Plan {
   }
 
   for (const s of sessions) {
+    // balancing must not push a session past the time the person asked for
+    s.exercises = fitToTime(s.exercises, profile.sessionLengthMinutes * 1.1)
     const v = volumeBySide(s.exercises)
     s.pushVolumeSets = v.push
     s.pullVolumeSets = v.pull
