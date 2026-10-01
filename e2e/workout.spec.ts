@@ -126,11 +126,13 @@ test('finishing with nothing logged is refused with a way out', async ({ page })
 test('next session suggests a heavier load and shows last time', async ({ page }) => {
   await onboard(page)
   await startWorkout(page)
-  const first = Number(await page.getByLabel(/^Weight/).inputValue())
-  expect(first).toBeGreaterThan(0)
+  // first time with this lift: the person picks the weight (calibration), then StepUp takes over
+  await expect(page.getByText('First time with this one')).toBeVisible()
+  expect(await page.getByLabel(/^Weight/).inputValue()).toBe('')
+  const first = 10
 
   for (let i = 0; i < 3; i += 1) {
-    await logSet(page, '10', { rpe: 2 })
+    await logSet(page, '12', { weight: String(first), rpe: 2 })
     await page.getByRole('button', { name: 'Skip rest' }).click()
   }
   await page.getByRole('button', { name: 'Finish early' }).click()

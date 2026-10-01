@@ -24,9 +24,14 @@ export default function Welcome() {
         </p>
       </div>
 
-      <Button className="w-full md:w-auto" onClick={() => navigate('/onboarding')}>
-        Get started
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Button className="w-full md:w-auto" onClick={() => navigate('/onboarding')}>
+          Get started
+        </Button>
+        <Button variant="secondary" className="w-full md:w-auto" onClick={() => navigate('/onboarding?mode=quick')}>
+          Quick start (3 questions)
+        </Button>
+      </div>
     </div>
   )
 }

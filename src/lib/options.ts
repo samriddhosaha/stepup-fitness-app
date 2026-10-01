@@ -1,4 +1,4 @@
-import type { Appearance, Equipment, FitnessLevel, PrimaryGoal, Sex, TrainingPreference, WeightUnit } from '../db/types'
+import type { Appearance, Equipment, FitnessLevel, InjuryArea, PrimaryGoal, Sex, TrainingPreference, WeightUnit } from '../db/types'
 
 // One source for the choice lists used by onboarding and profile editing.
 // `label` is the full wording (onboarding); `short` fits compact lists.
@@ -55,6 +55,25 @@ export const APPEARANCE_OPTIONS: Option<Appearance>[] = [
   { value: 'dark', label: 'Dark', short: 'Dark' },
   { value: 'system', label: 'System', short: 'System' },
 ]
+
+export const INJURY_AREA_OPTIONS: Option<InjuryArea>[] = [
+  { value: 'lower-back', label: 'Lower back', short: 'Lower back' },
+  { value: 'knee', label: 'Knees', short: 'Knees' },
+  { value: 'shoulder', label: 'Shoulders', short: 'Shoulders' },
+  { value: 'wrist-elbow', label: 'Wrists or elbows', short: 'Wrists or elbows' },
+  { value: 'neck', label: 'Neck', short: 'Neck' },
+  { value: 'hip', label: 'Hips', short: 'Hips' },
+]
+
+export const WEEKDAYS = [
+  { value: 0, label: 'Mon', long: 'Monday' },
+  { value: 1, label: 'Tue', long: 'Tuesday' },
+  { value: 2, label: 'Wed', long: 'Wednesday' },
+  { value: 3, label: 'Thu', long: 'Thursday' },
+  { value: 4, label: 'Fri', long: 'Friday' },
+  { value: 5, label: 'Sat', long: 'Saturday' },
+  { value: 6, label: 'Sun', long: 'Sunday' },
+] as const
 
 export const toggleInArray = <T,>(arr: T[], value: T): T[] =>
   arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]

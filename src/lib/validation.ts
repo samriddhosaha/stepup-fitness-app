@@ -9,6 +9,8 @@ export interface NumericRange {
 // just tight enough to catch typos and impossible values — e.g. a height of
 // 300 cm, or a bodyweight of 3 kg.
 export const AGE_RANGE: NumericRange = { min: 13, max: 100 }
+/** Under this age we ask that a parent or guardian knows StepUp is being used. One constant, used everywhere. */
+export const AGE_GATE = 16
 export const HEIGHT_CM_RANGE: NumericRange = { min: 100, max: 230 }
 export const BODY_WEIGHT_KG_RANGE: NumericRange = { min: 30, max: 300 }
 export const WORKOUT_LOAD_KG_RANGE: NumericRange = { min: 0, max: 500 }

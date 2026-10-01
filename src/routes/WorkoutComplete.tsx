@@ -13,6 +13,7 @@ import { Button, Card, PageSkeleton } from '../components/ui'
 
 function prLabel(pr: PersonalRecord, unit: WeightUnit): string {
   if (pr.kind === 'reps') return `${pr.value} reps`
+  if (pr.kind === 'time') return `${pr.value} s hold`
   if (pr.kind === 'weight') return `${formatWeight(pr.value, unit)} lifted`
   return `${formatWeight(pr.value, unit)} est.`
 }

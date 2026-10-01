@@ -2,6 +2,10 @@ import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Button } from '../components/ui'
 import { getActivePlan } from '../db/schema'
+import { getExerciseById } from '../db/exerciseLibrary'
+import { estimateSessionMinutes } from '../lib/plan'
+
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 export default function PlanReady() {
   const navigate = useNavigate()
@@ -19,14 +23,16 @@ export default function PlanReady() {
       </div>
 
       {plan && (
-        <div className="space-y-3">
+        <ul className="space-y-3" aria-label="Your sessions">
           {plan.sessions.map((s) => (
-            <div key={s.name + s.dayIndex} className="rounded-lg border border-line bg-elevated px-4 py-3">
-              <p className="font-semibold">{s.name}</p>
-              <p className="text-xs text-faint">{s.exercises.length} exercises</p>
-            </div>
+            <li key={s.name + s.dayIndex} className="rounded-lg border border-line bg-elevated px-4 py-3">
+              <p className="font-semibold">
+                {s.name} <span className="text-xs font-normal text-faint">· {DAYS[s.dayIndex]} · about {estimateSessionMinutes(s)} min</span>
+              </p>
+              <p className="text-sm text-faint">{s.exercises.map((e) => getExerciseById(e.exerciseId)?.name).filter(Boolean).join(', ')}</p>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       <Button className="w-full md:w-auto" onClick={() => navigate('/dashboard')}>

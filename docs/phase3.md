@@ -1,0 +1,24 @@
+# Phase 3 — programming depth
+
+| ID | What changed |
+|---|---|
+| C-12, C-09 | **94 exercises** (was 32), IDs stable. Each has `trackingType` (weight-reps, bodyweight-reps, duration, distance-time), `skill` 1–3, `beginnerFriendly`, `contraindications` (lower back, knee, shoulder, wrist/elbow, neck, hip), horizontal/vertical `plane`, `unilateral`, `kit` and typed-but-empty `media`. New groups: lunges, glute bridges and hip thrusts, leg curls, leg extensions, calves, biceps, triceps, rear delts, lateral raises, anti-rotation core, more conditioning, three kinds of mobility. A library test checks unique IDs, three cues each, valid kit, ≥ 2 members per swap group across equipment tiers, and that every equipment tier has a beginner-friendly option for each main pattern. |
+| C-02, C-03, C-04, C-11, C-13 | `generatePlan` is a pipeline (`src/lib/plan.ts`, `src/lib/planning/`): template → candidates → prescription → fit to time. It honours **injuries** (structured picker, plus free-text read into body areas), **exclusions** (plural-aware phrase matching, "no cardio", "no pull-ups"), **equipment**, **fitness level** (beginners only get beginner-friendly movements; none ever get skill 3), **goal** (sets/reps/rest differ for strength, muscle, lean-out, endurance, general), **session length** (about 9 min per exercise, then verified to stay within +10% of what was asked), **preferences** (kit scoring), **training days** the user picks, **mobility** warm-up/cool-down blocks, and **conditioning** per goal (a finisher on ≤ 3-day plans, a dedicated day on 4+; before, 3-day plans silently got none). Repeated Upper/Lower days rotate accessories. Push and pull are paired and checked (`planBalance`, **Balance my plan**). A deload suggestion appears after ~6 weeks of training. |
+| P-03 | No sex-based multiplier anywhere. The first time you do a lift you pick the weight (**calibration prompt**, with an age-trimmed, body-weight-based hint you can ignore); progression takes over from what you lifted. Plans no longer store starting loads. |
+| U-04, P-02 | Onboarding v2: 11 steps (name, basics + unit, level, activity, goals, **training-day picker**, equipment, preferences, **structured injury picker** + exclusions, **readiness check**, **review with "why this plan"**) and a 3-question **Quick start**. Age gate in one constant (`AGE_GATE = 16`): 13–15 see a guardian note and must acknowledge it, under 13 is blocked. Any "yes" on a readiness question starts gently (≤ 2 sets, no barbell) and says so; the answers themselves are never saved. The draft is persisted in IndexedDB, so a refresh keeps your answers and your place. Plan-ready lists exercises and minutes per session. |
+| C-11 | Plan editing: swap (same group, safe for you), reorder, add, remove, adjust sets and reps, rename, **Balance my plan**; "Rebuild" keeps all weights and history (they live in `exerciseState`). **Custom exercises** (Dexie v3 table, in backups, never sent to the AI server). |
+| C-09 | Duration and distance logging: stopwatch for holds and carries (optional load), minutes + distance (km, or miles for lb users) for cardio, reps-only for bodyweight moves; rest comes from the plan (none for 10-second mobility holds); progression per type (add 5 s, add ~10% minutes, heavier carries); longest hold is a PR kind. |
+| 3.6 | Skipping for **discomfort or pain** offers to replace the exercise or take it out of the plan; it is added to `avoidedExerciseIds`, which generation, swap lists and plan editing respect. Profile → Edit preferences lists avoided exercises with **Allow again**. |
+
+## Audit scenarios, re-run
+- **E2** (45, bad lower back, no deadlifts, no squats, bodyweight preference, 30 min, rack or full gym): the old plan held back squat, deadlift, bench, barbell row and OHP. Now: bodyweight push-ups, rows and hinges only; nothing with a lower-back contraindication; nothing matching squat or deadlift. Covered in `plan.test.ts`.
+- **E3** (same, dumbbells only): no goblet/bodyweight/band squats, no dumbbell RDL.
+- **E6** (100 kg "experienced" lifter handed a 130 kg first deadlift): there are no starting loads any more.
+
+## Tests
+`plan.test.ts` runs the generator over 2,520 combinations of equipment × days × level × goal × injuries (no empty sessions, no contraindicated exercise, kit respected, beginners safe, one distinct day per session) plus targeted tests for exclusions, goals, sizing, balance, rotation, mobility and conditioning. `e2e/onboarding.spec.ts` covers draft restore, quick start, the age gate, injuries/exclusions/days reaching the plan, gentle start, plan editing with a custom exercise, and the pain loop.
+
+## Defaults applied (flagged)
+- Injury-area tags on exercises are conservative guidance, not medical advice; the copy says so.
+- Custom exercises are excluded from automatic plans (only added by hand) and from the AI payload.
+- Readiness answers are used once and not stored.

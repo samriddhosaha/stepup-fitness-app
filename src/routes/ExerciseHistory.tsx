@@ -7,7 +7,7 @@ import { bestCandidate } from '../lib/records'
 import { formatWeight } from '../lib/units'
 import { useUnit } from '../lib/useUnit'
 import { parseISODateLocal } from '../lib/format'
-import { summariseSets } from '../features/workout/constants'
+import { summariseSets } from '../features/workout/setValues'
 import { Card, EmptyState, PageSkeleton } from '../components/ui'
 
 /** Every time one exercise was logged, newest first. */
@@ -56,7 +56,7 @@ export default function ExerciseHistory() {
                       year: 'numeric',
                     })}
                   </p>
-                  <p className="text-sm font-semibold">{summariseSets(ex.sets, unit)}</p>
+                  <p className="text-sm font-semibold">{summariseSets(ex.sets, unit, exercise.trackingType)}</p>
                   {best && best.kind !== 'reps' && (
                     <p className="text-xs text-faint mt-1">
                       Best: {formatWeight(best.value, unit)}

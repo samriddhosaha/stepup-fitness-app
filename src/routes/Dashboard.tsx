@@ -1,10 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, getActivePlan } from '../db/schema'
+import { useState } from 'react'
+import { db, getActivePlan, setSetting } from '../db/schema'
 import { getExerciseById } from '../db/exerciseLibrary'
 import { discardSession, findTodaysSession, getInProgressSession, todayWeekdayIndex } from '../lib/workout'
 import { activeWeeksInARow, completedThisWeek } from '../lib/consistency'
-import { estimateSessionMinutes } from '../lib/plan'
+import { deloadDue, estimateSessionMinutes } from '../lib/plan'
 import { isRealPR } from '../lib/records'
 import { greetingForNow, todayISODate } from '../lib/format'
 import { Button, Card, PageSkeleton, WeekDots } from '../components/ui'
@@ -28,6 +29,8 @@ export default function Dashboard() {
   const plan = useLiveQuery(getActivePlan)
   const sessions = useLiveQuery(() => db.workoutSessions.toArray())
   const inProgress = useLiveQuery(async () => (await getInProgressSession()) ?? null)
+  const deloadAckAt = useLiveQuery(async () => ((await db.settings.get('deloadAckAt'))?.value as number | undefined) ?? null, [])
+  const [loadedAt] = useState(() => Date.now())
   const recentPR = useLiveQuery(async () => {
     const rows = await db.personalRecords.filter((r) => isRealPR(r) && r.achievedAt >= Date.now() - WEEK_MS).toArray()
     return rows.sort((a, b) => a.achievedAt - b.achievedAt)
@@ -42,6 +45,8 @@ export default function Dashboard() {
   const weeksInARow = activeWeeksInARow(sessions, today)
   const doneThisWeek = completedThisWeek(sessions, today)
   const latestPR = recentPR?.[recentPR.length - 1]
+  const completedSincePlan = sessions.filter((s) => s.completedAt && s.completedAt >= Math.max(activePlan.createdAt, deloadAckAt ?? 0)).length
+  const easyWeek = deloadAckAt !== undefined && deloadDue(activePlan.createdAt, completedSincePlan, loadedAt, deloadAckAt ?? undefined)
   const upNext = todays ? undefined : nextSessionAfterToday(activePlan.sessions, todayWeekdayIndex())
 
   return (
@@ -106,6 +111,19 @@ export default function Dashboard() {
               </>
             )}
           </Card>
+
+          {easyWeek && (
+            <Card className="bg-accent-soft">
+              <p className="label-eyebrow text-faint mb-1">A thought for this week</p>
+              <p className="font-semibold mb-1">Time for an easier week?</p>
+              <p className="text-sm mb-3">
+                You’ve trained steadily for about six weeks. Doing roughly a third fewer sets at the same weights lets your body catch up, and you come back stronger.
+              </p>
+              <Button variant="secondary" className="min-h-11" onClick={() => void setSetting('deloadAckAt', Date.now())}>
+                Got it
+              </Button>
+            </Card>
+          )}
 
           <WeeklyReviewCard aiEnabled={Boolean(profile?.aiCoachEnabled)} />
         </div>

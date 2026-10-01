@@ -25,15 +25,16 @@ for (const theme of ['light', 'dark'] as Theme[]) {
       await page.getByRole('button', { name: 'Get started' }).click()
       const answers: Record<number, () => Promise<void>> = {
         1: () => page.getByLabel('Name').fill('Casey'),
-        3: () => page.getByRole('button', { name: "I'm new to structured workouts" }).click(),
-        5: () => page.getByRole('button', { name: 'Build muscle' }).first().click(),
+        2: () => page.getByLabel('Age').fill('30'),
+        3: () => page.getByRole('radio', { name: "I'm new to structured workouts" }).click(),
+        5: () => page.getByRole('radio', { name: 'Build muscle' }).click(),
         7: () => page.getByRole('button', { name: 'Dumbbells' }).click(),
       }
-      for (let step = 1; step <= 9; step += 1) {
+      for (let step = 1; step <= 11; step += 1) {
         await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', String(step))
         await answers[step]?.()
         await expectNoSeriousViolations(page, `onboarding step ${step}`)
-        await page.getByRole('button', { name: step === 9 ? 'Build my plan' : 'Continue' }).click()
+        await page.getByRole('button', { name: step === 11 ? 'Build my plan' : 'Continue' }).click()
       }
       await expect(page.getByRole('heading', { name: 'Your plan is ready.' })).toBeVisible()
       await expectNoSeriousViolations(page, 'plan ready')

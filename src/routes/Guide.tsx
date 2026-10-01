@@ -16,7 +16,7 @@ const SECTIONS = [
   },
   {
     title: 'How your plan works',
-    body: 'Your plan is built from what you told us: goal, days available, equipment, and experience. The first loads are an estimate. After that, StepUp suggests your next weight from what you actually lifted: add a little once every set reaches the top of the rep range at a manageable effort, hold when it was heavy, and ease back after two tough sessions in a row.',
+    body: 'Your plan is built from what you told us: goal, the days and time you have, your equipment, your experience, and anything you want to avoid. The first time you do a lift, you choose the weight. After that, StepUp suggests your next weight from what you actually lifted: add a little once every set reaches the top of the rep range at a manageable effort, hold when it was heavy, and ease back after two tough sessions in a row. Goals change the sets, reps and rests. Injuries and exclusions you tell us about are left out, and you can edit, swap or add exercises on the Plan screen whenever you like.',
   },
   {
     title: 'Consistency',

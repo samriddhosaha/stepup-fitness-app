@@ -23,6 +23,7 @@ import type { PersonalRecord, WeightUnit } from '../db/types'
 
 function prValue(pr: PersonalRecord, unit: WeightUnit): string {
   if (pr.kind === 'reps') return `${pr.value} reps`
+  if (pr.kind === 'time') return `${pr.value} s`
   return `${formatWeight(pr.value, unit)}${pr.kind === 'weight' ? '' : ' est.'}`
 }
 

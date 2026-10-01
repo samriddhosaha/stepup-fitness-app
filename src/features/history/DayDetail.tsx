@@ -5,11 +5,12 @@ import { db } from '../../db/schema'
 import { getExerciseById } from '../../db/exerciseLibrary'
 import { deleteCompletedSession, updateCompletedSet } from '../../lib/workout'
 import { formatDuration } from '../../lib/format'
-import { formatWeight, parseWeight } from '../../lib/units'
-import { summariseSets } from '../workout/constants'
+import { workoutLoadRangeForUnit } from '../../lib/units'
+import { loadStepFor } from '../../lib/overload'
 import { SKIP_REASONS } from '../workout/constants'
+import { SetForm } from '../workout/SetForm'
+import { describeSet, setFromValues, summariseSets, validateValues, valuesFromSet, type SetFormValues } from '../workout/setValues'
 import { Button, Card } from '../../components/ui'
-import { NumberField } from '../../components/forms'
 import { ConfirmDialog } from '../../components/overlays'
 import { useToast } from '../../components/toastContext'
 import type { LoggedSet, WeightUnit, WorkoutSession } from '../../db/types'
@@ -38,34 +39,37 @@ function SetEditor({
   unit: WeightUnit
   onDone: () => void
 }) {
-  const [weight, setWeight] = useState(set.weightKg ? formatWeight(set.weightKg, unit, false) : '')
-  const [reps, setReps] = useState(String(set.reps ?? ''))
-  const repsNum = Number(reps)
-  const valid = Number.isInteger(repsNum) && repsNum > 0
+  const tracking = getExerciseById(exerciseId)?.trackingType ?? 'weight-reps'
+  const showWeight = tracking === 'weight-reps' || (tracking === 'duration' && Boolean(set.weightKg))
+  const [values, setValues] = useState<SetFormValues>(() => valuesFromSet(set, unit))
+  const validation = validateValues(values, tracking, unit, showWeight)
 
   async function save() {
-    await updateCompletedSet(sessionId, exerciseId, index, {
-      weightKg: parseWeight(weight, unit) ?? undefined,
-      reps: repsNum,
-    })
+    const next = setFromValues(values, tracking, unit, index, showWeight)
+    if (!next) return
+    const { setIndex: _ignored, ...changes } = next
+    void _ignored
+    await updateCompletedSet(sessionId, exerciseId, index, changes)
     onDone()
   }
 
   return (
     <li className="py-2 border-b border-dotted border-hairline">
       <p className="text-sm font-semibold mb-2">Set {index + 1}</p>
-      <div className="grid grid-cols-2 gap-3 mb-2">
-        <NumberField label={`Weight (${unit})`} value={weight} onChange={setWeight} step={unit === 'lb' ? 5 : 2.5} min={0} />
-        <NumberField label="Reps" inputMode="numeric" value={reps} onChange={setReps} step={1} min={1} />
-      </div>
-      <div className="flex gap-3">
-        <Button className="flex-1" disabled={!valid} onClick={save}>
-          Save
-        </Button>
-        <Button variant="ghost" onClick={onDone}>
-          Cancel
-        </Button>
-      </div>
+      <SetForm
+        tracking={tracking}
+        unit={unit}
+        showWeight={showWeight}
+        values={values}
+        onChange={(p) => setValues((v) => ({ ...v, ...p }))}
+        errors={validation.errors}
+        weightStep={loadStepFor(exerciseId, set.weightKg, unit)}
+        weightRange={workoutLoadRangeForUnit(unit)}
+        canSubmit={validation.canSubmit}
+        submitLabel="Save"
+        onSubmit={save}
+        onCancel={onDone}
+      />
     </li>
   )
 }
@@ -115,7 +119,7 @@ function SessionCard({ session, unit }: { session: WorkoutSession; unit: WeightU
               <Link to={`/history/exercise/${ex.exerciseId}`} className="font-semibold underline-offset-2 hover:underline">
                 {getExerciseById(ex.exerciseId)?.name ?? ex.exerciseId}
               </Link>
-              <span className="text-faint text-right">{summariseSets(ex.sets, unit)}</span>
+              <span className="text-faint text-right">{summariseSets(ex.sets, unit, getExerciseById(ex.exerciseId)?.trackingType)}</span>
             </div>
             {editing && (
               <ul className="mt-2">
@@ -133,8 +137,7 @@ function SessionCard({ session, unit }: { session: WorkoutSession; unit: WeightU
                   ) : (
                     <li key={i} className="flex justify-between items-center text-sm">
                       <span>
-                        Set {i + 1} · {set.weightKg ? `${formatWeight(set.weightKg, unit)} × ` : ''}
-                        {set.reps ?? set.durationSeconds}
+                        Set {i + 1} · {describeSet(set, unit, getExerciseById(ex.exerciseId)?.trackingType)}
                       </span>
                       <button
                         className="min-h-11 px-2 font-semibold text-accent"
