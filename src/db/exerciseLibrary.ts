@@ -1,4 +1,5 @@
 import type { Exercise } from './types'
+import { LEGACY_META, NEW_EXERCISES, finalize, type BaseExercise } from './exerciseData'
 
 // Warm-up ramp: ascending-load sets before the working sets, expressed as a
 // percentage of that day's working weight. Only defined for the three
@@ -9,7 +10,7 @@ const BARBELL_WARMUP_RAMP = [
   { percentOfWorking: 0.8, reps: 3 },
 ]
 
-export const EXERCISE_LIBRARY: Exercise[] = [
+const LEGACY_EXERCISES: BaseExercise[] = [
   // ---- Squat pattern ----
   {
     id: 'back-squat',
@@ -450,14 +451,38 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   },
 ]
 
+/** Every built-in exercise: the original set (with planning metadata added) plus the expanded library. */
+export const EXERCISE_LIBRARY: Exercise[] = [
+  ...LEGACY_EXERCISES.map((e) => finalize(e, LEGACY_META[e.id])),
+  ...NEW_EXERCISES,
+]
+
 const EXERCISE_BY_ID = new Map(EXERCISE_LIBRARY.map((e) => [e.id, e]))
 
+// The person's own exercises. Held in memory (loaded from IndexedDB at start-up and kept in sync)
+// so lookups stay synchronous everywhere.
+let customById = new Map<string, Exercise>()
+
+export function setCustomExercises(list: Exercise[]): void {
+  customById = new Map(list.map((e) => [e.id, e]))
+}
+
 export function getExerciseById(id: string): Exercise | undefined {
-  return EXERCISE_BY_ID.get(id)
+  return EXERCISE_BY_ID.get(id) ?? customById.get(id)
+}
+
+/** True for the built-in library (the AI coach's server only knows these). */
+export function isBuiltInExercise(id: string): boolean {
+  return EXERCISE_BY_ID.has(id)
+}
+
+/** Built-in plus custom exercises. Plan generation uses only the built-in library. */
+export function allExercises(): Exercise[] {
+  return customById.size === 0 ? EXERCISE_LIBRARY : [...EXERCISE_LIBRARY, ...customById.values()]
 }
 
 export function getSubstitutes(exercise: Exercise, availableEquipment: string[]): Exercise[] {
-  return EXERCISE_LIBRARY.filter(
+  return allExercises().filter(
     (e) =>
       e.substitutionGroupId === exercise.substitutionGroupId &&
       e.id !== exercise.id &&

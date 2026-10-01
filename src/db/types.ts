@@ -18,6 +18,8 @@ export type TrainingPreference =
   | 'machines'
   | 'conditioning'
   | 'mobility'
+/** Body areas an exercise can aggravate; users pick theirs during onboarding. */
+export type InjuryArea = 'lower-back' | 'knee' | 'shoulder' | 'wrist-elbow' | 'neck' | 'hip'
 export type WeightUnit = 'kg' | 'lb'
 export type Appearance = 'light' | 'dark' | 'system'
 export type Sex = 'male' | 'female' | 'unspecified'
@@ -40,6 +42,14 @@ export interface Profile {
   trainingPreferences: TrainingPreference[]
   exclusions?: string
   injuries?: string
+  /** Structured injury picker (drives exercise selection). `injuries` stays as free-text context. */
+  injuryAreas?: InjuryArea[]
+  /** Weekdays the user trains, 0 = Monday. When set, sessions land on exactly these days. */
+  trainingDays?: number[]
+  /** Exercises the user asked not to see again (e.g. after discomfort). */
+  avoidedExerciseIds?: string[]
+  /** A readiness answer asked for care: the plan stays gentler (fewer sets, no heavy compounds). */
+  gentleStart?: boolean
   weightUnit: WeightUnit
   appearance: Appearance
   aiCoachEnabled?: boolean
@@ -57,12 +67,19 @@ export type SessionType =
   | 'easy-endurance'
   | 'intervals'
 
+export type PlanBlock = 'warm-up' | 'main' | 'cool-down'
+
 export interface PlanExercise {
   exerciseId: string
   targetSets: number
+  /** Reps, or seconds for `duration` exercises, or minutes for `distance-time`. */
   targetRepsLow: number
   targetRepsHigh: number
   startingLoadKg?: number
+  restSeconds?: number
+  block?: PlanBlock
+  /** Main lifts keep their sets when a session is squeezed for time; accessories give way first. */
+  role?: 'main' | 'accessory'
 }
 
 export interface PlanSession {
@@ -88,6 +105,7 @@ export type MovementPattern =
   | 'pull'
   | 'carry'
   | 'core'
+  | 'isolation'
   | 'conditioning'
   | 'mobility'
 
@@ -95,6 +113,10 @@ export interface WarmupRampSet {
   percentOfWorking: number
   reps: number
 }
+
+/** What is logged for each set. */
+export type TrackingType = 'weight-reps' | 'bodyweight-reps' | 'duration' | 'distance-time'
+export type ImplementKind = 'barbell' | 'dumbbell' | 'bodyweight' | 'machine' | 'band'
 
 export interface Exercise {
   id: string
@@ -105,6 +127,18 @@ export interface Exercise {
   substitutionGroupId: string
   formCues: [string, string, string]
   warmupRamp?: WarmupRampSet[]
+  trackingType: TrackingType
+  /** 1 = learn it in a session; 2 = needs some practice; 3 = technical, for experienced lifters. */
+  skill: 1 | 2 | 3
+  beginnerFriendly: boolean
+  /** Body areas this movement commonly aggravates. */
+  contraindications: InjuryArea[]
+  /** For presses and pulls: which plane of movement, used to balance a plan. */
+  plane?: 'vertical' | 'horizontal'
+  unilateral: boolean
+  kit: ImplementKind
+  /** Reserved for future demos; typed now so the library can grow media without a schema change. */
+  media?: { imageUrl?: string; videoUrl?: string }
 }
 
 export type SkipReason =
@@ -120,6 +154,7 @@ export interface LoggedSet {
   weightKg?: number
   reps?: number
   durationSeconds?: number
+  distanceM?: number
   rpe?: number // 1-5
   note?: string
 }
@@ -166,7 +201,7 @@ export interface ProgressSnapshot {
   bodyWeightKg: number
 }
 
-export type PRKind = 'weight' | 'e1rm' | 'reps'
+export type PRKind = 'weight' | 'e1rm' | 'reps' | 'time'
 
 export interface PersonalRecord {
   id?: number
