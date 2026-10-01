@@ -1,8 +1,8 @@
 import sharp from 'sharp'
 import { mkdirSync, writeFileSync } from 'fs'
 
-const ACCENT = '#10162F'
-const INK_ON_ACCENT = '#EAFDC6'
+const ACCENT = '#0A0A0A'
+const INK_ON_ACCENT = '#F5F5F5'
 
 // A geometric "S" built from an explicit stroked path (not a text glyph) so
 // it renders identically regardless of which fonts happen to be installed

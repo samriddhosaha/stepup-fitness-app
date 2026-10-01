@@ -17,7 +17,7 @@ function readCachedAppearance(): Appearance {
     : 'system'
 }
 
-const THEME_COLORS = { light: '#ECF3F7', dark: '#10162F' } as const
+const THEME_COLORS = { light: '#F3F3F3', dark: '#0C0C0C' } as const
 
 /** Keeps the browser chrome colour in step with an explicit light/dark choice (the OS setting rules otherwise). */
 function applyThemeColor(appearance: Appearance) {
