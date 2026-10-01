@@ -2,7 +2,7 @@
 
 A personal trainer that lives in your phone. Fully local-first strength-training tracker — no account, no server, no data leaving the device unless you explicitly opt in.
 
-Rebuilt per `FORGE_AUDIT.md` and `BUILD_GUIDE.md` (see the parent directory) — those docs predate the StepUp rename and still refer to the app by its original working name, "Forge."
+See `AUDIT.md` for the review this work follows and `docs/` for per-phase notes.
 
 ## Stack
 
@@ -14,8 +14,10 @@ Vite + React 19 + TypeScript + Tailwind CSS v4 + React Router + Dexie (IndexedDB
 npm install
 npm run dev       # http://localhost:5173
 npm run build     # production build to dist/
-npm run test      # vitest
+npm test          # vitest (unit + DB tests)
+npm run e2e       # Playwright + axe against the production build
 npm run lint      # oxlint
+npm run check     # lint + typecheck + test + build
 ```
 
 ## Optional AI weekly coach
@@ -33,4 +35,4 @@ Without a configured key, the app falls back to a local, rules-based weekly reca
 
 - **Fully local-first.** All data lives in IndexedDB via Dexie. The only network call in the entire app is the opt-in AI weekly coach (`api/weekly-review.ts`), and it's a single-shot, stateless summarization call to the Gemini API — no chat, no persisted session, no data stored server-side.
 - **Design tokens** live in `src/index.css` as CSS custom properties, mapped into Tailwind's `@theme`. The `--c-faint` values were recalculated from the original audit spec to actually clear WCAG AA (4.5:1) against both `canvas` and `elevated` in both themes — see the comment in that file.
-- **`scripts/`** holds one-off tooling: `gen-icons.mjs` (regenerates PWA icons), and Playwright-based manual QA drivers (`drive*.mjs`, `offline-test.mjs`) used to smoke-test flows headlessly — not part of the automated test suite.
+- **`e2e/`** is the Playwright Test suite (workout flows, keyboard-only paths, offline, and axe checks in both themes). **`scripts/gen-icons.mjs`** regenerates the PWA icons.

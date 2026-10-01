@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getSetting, setSetting, wipeAllData } from '../db/schema'
 import { getExerciseById } from '../db/exerciseLibrary'
-import { useTheme } from '../lib/theme'
+import { useTheme } from '../lib/useTheme'
 import { track } from '../lib/analytics'
 import { buildWeeklyReviewPayload } from '../lib/aiCoach'
 import {
@@ -12,7 +12,10 @@ import {
   shouldNudgeBackup,
   workoutsSinceBackup,
 } from '../lib/storage'
-import { Button, Card, Chip } from '../components/ui'
+import { Button, Card } from '../components/ui'
+import { SegmentedControl } from '../components/forms'
+import { ConfirmDialog } from '../components/overlays'
+import { APPEARANCE_OPTIONS, UNIT_OPTIONS, withLabel } from '../lib/options'
 import type { Appearance, WeightUnit } from '../db/types'
 import type { WeeklyReviewPayload } from '../lib/aiCoach'
 
@@ -150,24 +153,22 @@ export default function Profile() {
 
         <Card>
           <p className="label-eyebrow text-faint mb-3">Units</p>
-          <div className="flex gap-2" role="group" aria-label="Weight unit">
-            {(['kg', 'lb'] as WeightUnit[]).map((u) => (
-              <Chip key={u} active={profile.weightUnit === u} aria-pressed={profile.weightUnit === u} onClick={() => updateWeightUnit(u)}>
-                {u}
-              </Chip>
-            ))}
-          </div>
+          <SegmentedControl
+            label="Weight unit"
+            options={withLabel(UNIT_OPTIONS, 'short')}
+            value={profile.weightUnit}
+            onChange={updateWeightUnit}
+          />
         </Card>
 
         <Card>
           <p className="label-eyebrow text-faint mb-3">Appearance</p>
-          <div className="flex gap-2" role="group" aria-label="Appearance">
-            {(['light', 'dark', 'system'] as Appearance[]).map((a) => (
-              <Chip key={a} active={appearance === a} aria-pressed={appearance === a} onClick={() => updateAppearance(a)}>
-                {a.charAt(0).toUpperCase() + a.slice(1)}
-              </Chip>
-            ))}
-          </div>
+          <SegmentedControl
+            label="Appearance"
+            options={withLabel(APPEARANCE_OPTIONS, 'short')}
+            value={appearance}
+            onChange={updateAppearance}
+          />
         </Card>
 
         <Card className="md:col-span-2">
@@ -227,19 +228,14 @@ export default function Profile() {
               )}
             </div>
           )}
-          {confirmingAICoach && (
-            <div className="mt-4 pt-4 border-t border-line">
-              <p className="text-sm mb-3">{AI_COACH_CONSENT_COPY}</p>
-              <div className="flex gap-3">
-                <Button variant="ghost" className="flex-1" onClick={() => setConfirmingAICoach(false)}>
-                  Cancel
-                </Button>
-                <Button variant="secondary" className="flex-1" onClick={() => setAICoachEnabled(true)}>
-                  Turn on
-                </Button>
-              </div>
-            </div>
-          )}
+          <ConfirmDialog
+            open={confirmingAICoach}
+            title="Turn on the AI weekly coach?"
+            body={AI_COACH_CONSENT_COPY}
+            confirmLabel="Turn on"
+            onConfirm={() => setAICoachEnabled(true)}
+            onCancel={() => setConfirmingAICoach(false)}
+          />
         </Card>
 
         <Card className="md:col-span-2">
@@ -293,28 +289,26 @@ export default function Profile() {
             />
           </div>
 
-          {importState.step === 'confirm' && (
-            <div className="mt-4 pt-4 border-t border-line" role="alertdialog" aria-label="Confirm import">
-              <p className="font-semibold mb-1">Replace your data with this backup?</p>
-              <p className="text-sm text-faint mb-3">
-                {importState.summary.workouts} workout{importState.summary.workouts === 1 ? '' : 's'}
-                {importState.summary.firstDate && importState.summary.lastDate
-                  ? `, ${importState.summary.firstDate} to ${importState.summary.lastDate}`
-                  : ''}
-                {importState.summary.profileName ? ` · ${importState.summary.profileName}` : ''}. Exported{' '}
-                {new Date(importState.summary.exportedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}. A copy of what’s here now
-                downloads first.
-              </p>
-              <div className="flex gap-3">
-                <Button variant="ghost" className="flex-1" onClick={() => setImportState({ step: 'idle' })}>
-                  Cancel
-                </Button>
-                <Button className="flex-1" onClick={confirmImport}>
-                  Replace my data
-                </Button>
-              </div>
-            </div>
-          )}
+          <ConfirmDialog
+            open={importState.step === 'confirm'}
+            title="Replace your data with this backup?"
+            body={
+              importState.step === 'confirm' && (
+                <>
+                  {importState.summary.workouts} workout{importState.summary.workouts === 1 ? '' : 's'}
+                  {importState.summary.firstDate && importState.summary.lastDate
+                    ? `, ${importState.summary.firstDate} to ${importState.summary.lastDate}`
+                    : ''}
+                  {importState.summary.profileName ? ` · ${importState.summary.profileName}` : ''}. Exported{' '}
+                  {new Date(importState.summary.exportedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}. A copy of
+                  what’s here now downloads first.
+                </>
+              )
+            }
+            confirmLabel="Replace my data"
+            onConfirm={confirmImport}
+            onCancel={() => setImportState({ step: 'idle' })}
+          />
           {importState.step === 'working' && <p className="text-sm text-faint mt-3">Restoring…</p>}
           {message && (
             <p role="status" className="text-sm text-faint mt-3">
@@ -333,20 +327,18 @@ export default function Profile() {
             Consider exporting your data first. Deleting removes your profile, plan, history, and progress. This cannot be
             undone.
           </p>
-          {!confirmingDelete ? (
-            <Button variant="danger" onClick={() => setConfirmingDelete(true)}>
-              Delete everything
-            </Button>
-          ) : (
-            <div className="flex gap-3">
-              <Button variant="ghost" onClick={() => setConfirmingDelete(false)}>
-                Cancel
-              </Button>
-              <Button variant="danger" onClick={handleDeleteAll}>
-                Yes, delete everything
-              </Button>
-            </div>
-          )}
+          <Button variant="danger" onClick={() => setConfirmingDelete(true)}>
+            Delete everything
+          </Button>
+          <ConfirmDialog
+            open={confirmingDelete}
+            title="Delete everything?"
+            body="This removes your profile, plan, history and progress from this device. It cannot be undone."
+            confirmLabel="Yes, delete everything"
+            danger
+            onConfirm={handleDeleteAll}
+            onCancel={() => setConfirmingDelete(false)}
+          />
         </Card>
       </div>
     </div>

@@ -28,6 +28,7 @@ export default function ProgressXP() {
         ← Progress
       </Link>
 
+      <h1 className="sr-only">XP and level</h1>
       <div className="md:grid md:grid-cols-3 md:gap-8 mt-6 space-y-6 md:space-y-0">
         <div className="md:col-span-1">
           <Card>

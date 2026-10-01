@@ -7,7 +7,7 @@ export default function Welcome() {
   return (
     <div className="flex-1 flex flex-col justify-between py-10">
       <div>
-        <p className="font-display font-semibold text-5xl md:text-6xl leading-none mb-4">StepUp</p>
+        <h1 className="font-display font-semibold text-5xl md:text-6xl leading-none mb-4">StepUp</h1>
         <p className="text-lg text-ink/80 max-w-sm">
           A personal trainer that lives in your phone.
         </p>

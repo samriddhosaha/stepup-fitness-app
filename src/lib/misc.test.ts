@@ -7,7 +7,8 @@ import { isStoragePersisted, requestPersistentStorage, shouldNudgeBackup, workou
 import { daysAgoISO, formatDuration, greetingForNow, kgToDisplay, displayToKg, startOfWeekISO, todayISODate, unitLabel } from './format'
 import { runReminderChecks } from './notifications'
 import { track } from './analytics'
-import { ThemeProvider, useTheme } from './theme'
+import { ThemeProvider } from './theme'
+import { useTheme } from './useTheme'
 import { useWakeLock } from './useWakeLock'
 import { requestAIWeeklyReview } from './aiCoach'
 

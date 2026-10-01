@@ -2,14 +2,14 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Link } from 'react-router-dom'
 import { getActivePlan } from '../db/schema'
 import { getExerciseById } from '../db/exerciseLibrary'
-import { Card, EmptyState } from '../components/ui'
+import { Card, EmptyState, PageSkeleton } from '../components/ui'
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export default function Plan() {
   const plan = useLiveQuery(getActivePlan)
 
-  if (plan === undefined) return null
+  if (plan === undefined) return <PageSkeleton />
 
   if (!plan || plan.sessions.length === 0) {
     return <EmptyState title="No plan yet" body="We couldn't find a plan for you yet." />

@@ -46,6 +46,7 @@ export default function Dashboard() {
 
   return (
     <div>
+      <h1 className="sr-only">Home</h1>
       <p className="text-sm text-faint mb-6">
         {greetingForNow()}
         {profile?.name ? `, ${profile.name}` : ''}

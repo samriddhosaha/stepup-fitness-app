@@ -150,6 +150,31 @@
   }
 }
 
+/* Keyboard focus: one clear ring everywhere (3px, high contrast against both themes). */
+@layer base {
+  :focus-visible {
+    outline: 3px solid rgb(var(--c-ink));
+    outline-offset: 3px;
+  }
+  /* Controls that set their own focus colour keep it, still thick enough to see. */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-width: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer components {
   /* Solid offset block, as in the reference */
   .shadow-soft {

@@ -1,12 +1,11 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useLayoutEffect,
   useState,
   type ReactNode,
 } from 'react'
 import type { Appearance } from '../db/types'
+import { ThemeContext } from './useTheme'
 
 const STORAGE_KEY = 'stepup-appearance'
 
@@ -26,13 +25,6 @@ function applyToDocument(appearance: Appearance) {
     root.setAttribute('data-theme', appearance)
   }
 }
-
-interface ThemeContextValue {
-  appearance: Appearance
-  setAppearance: (appearance: Appearance) => void
-}
-
-const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [appearance, setAppearanceState] = useState<Appearance>(
@@ -54,10 +46,4 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       {children}
     </ThemeContext.Provider>
   )
-}
-
-export function useTheme(): ThemeContextValue {
-  const ctx = useContext(ThemeContext)
-  if (!ctx) throw new Error('useTheme must be used within a ThemeProvider')
-  return ctx
 }

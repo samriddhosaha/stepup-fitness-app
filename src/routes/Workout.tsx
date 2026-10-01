@@ -19,7 +19,7 @@ export default function Workout() {
       <div className="flex-1 flex flex-col justify-between py-10">
         {dialog}
         <div>
-          <p className="font-display font-semibold text-3xl mb-2">Nothing scheduled.</p>
+          <h1 className="font-display font-semibold text-3xl mb-2">Nothing scheduled.</h1>
           <p className="text-faint">A rest day.</p>
           <p className="text-sm text-faint mt-4">
             Rest is part of the plan, not a break from it.
@@ -43,7 +43,7 @@ export default function Workout() {
     <div className="flex-1 flex flex-col justify-between py-10">
       {dialog}
       <div>
-        <p className="font-display font-semibold text-3xl mb-2">{todays.name}</p>
+        <h1 className="font-display font-semibold text-3xl mb-2">{todays.name}</h1>
         <p className="text-faint">Nothing to prove today. Just begin.</p>
       </div>
 

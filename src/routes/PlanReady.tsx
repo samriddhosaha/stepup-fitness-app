@@ -10,9 +10,9 @@ export default function PlanReady() {
   return (
     <div className="flex-1 flex flex-col justify-between py-10">
       <div>
-        <p className="font-display font-semibold text-4xl leading-none mb-4">
+        <h1 className="font-display font-semibold text-4xl leading-none mb-4">
           Your plan is ready.
-        </p>
+        </h1>
         <p className="text-faint">
           The first one is the only one that starts everything.
         </p>

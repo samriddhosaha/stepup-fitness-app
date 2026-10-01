@@ -62,7 +62,7 @@ export default function WorkoutComplete() {
   return (
     <div className="flex-1 flex flex-col justify-between py-10">
       <div>
-        <p className="font-display font-semibold text-3xl md:text-4xl mb-2">Workout complete.</p>
+        <h1 className="font-display font-semibold text-3xl md:text-4xl mb-2">Workout complete.</h1>
         <p className="text-faint">
           {session.finishedEarly ? 'Finished early — still counts.' : 'You showed up. That’s the whole job.'}
         </p>
