@@ -1,21 +1,41 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react'
 
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  loading?: boolean
+}
+
 export function Button({
   variant = 'primary',
   className = '',
+  type = 'button',
+  loading = false,
+  disabled,
+  children,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  loading?: boolean
 }) {
   const base =
     'press inline-flex items-center justify-center gap-2 rounded-lg border border-line px-6 min-h-12 text-[0.95rem] font-semibold transition-colors disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none'
-  const variants: Record<string, string> = {
+  const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
     primary: 'bg-accent text-on-accent',
     secondary: 'bg-elevated text-ink',
     ghost: 'bg-transparent text-ink hover:bg-surface',
     danger: 'bg-danger text-on-danger',
   }
-  return <button className={`${base} ${variants[variant]} ${className}`} {...props} />
+  return (
+    <button
+      type={type}
+      className={`${base} ${variants[variant]} ${className}`}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}
+    >
+      {children}
+    </button>
+  )
 }
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
