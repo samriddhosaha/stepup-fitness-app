@@ -1,4 +1,4 @@
-import { db, getActivePlan } from '../db/schema'
+import { db, getActivePlan, getActiveProfile } from '../db/schema'
 import { allExercises, getExerciseById } from '../db/exerciseLibrary'
 import { constraintsFor, isPermitted } from './planning/constraints'
 import { prescribe, type Role } from './planning/prescribe'
@@ -153,7 +153,7 @@ export async function saveActivePlan(plan: Plan): Promise<void> {
 /** Stop suggesting an exercise: it leaves generated plans, swap lists, and (optionally) the current plan. */
 export async function avoidExercise(exerciseId: string, options: { replaceWith?: string; removeFromPlan?: boolean } = {}): Promise<void> {
   await db.transaction('rw', db.profile, db.plans, async () => {
-    const profile = await db.profile.orderBy('createdAt').last()
+    const profile = await getActiveProfile()
     if (!profile?.id) return
     const avoided = [...new Set([...(profile.avoidedExerciseIds ?? []), exerciseId])]
     const updated: Profile = { ...profile, avoidedExerciseIds: avoided }
@@ -168,7 +168,7 @@ export async function avoidExercise(exerciseId: string, options: { replaceWith?:
 
 /** Lets a person see an exercise again. */
 export async function unavoidExercise(exerciseId: string): Promise<void> {
-  const profile = await db.profile.orderBy('createdAt').last()
+  const profile = await getActiveProfile()
   if (!profile?.id) return
   await db.profile.put({ ...profile, avoidedExerciseIds: (profile.avoidedExerciseIds ?? []).filter((id) => id !== exerciseId) })
 }

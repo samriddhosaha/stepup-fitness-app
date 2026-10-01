@@ -54,7 +54,7 @@ const RANKS: { minLevel: number; name: string }[] = [
 ]
 
 export function rankForLevel(level: number): string {
-  let rank = RANKS[0].name
+  let rank = RANKS[0]?.name ?? 'Beginner'
   for (const r of RANKS) {
     if (level >= r.minLevel) rank = r.name
   }

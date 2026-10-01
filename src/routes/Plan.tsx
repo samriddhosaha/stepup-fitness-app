@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link } from 'react-router-dom'
 import { ArrowDown, ArrowUp } from 'lucide-react'
-import { db, getActivePlan } from '../db/schema'
+import { getActivePlan } from '../db/schema'
+import { useProfile } from '../db/repo'
 import { getExerciseById } from '../db/exerciseLibrary'
 import { balancePlan, estimateSessionMinutes, planBalance } from '../lib/plan'
 import {
@@ -16,6 +17,8 @@ import {
   swapOptions,
 } from '../lib/planEdit'
 import { targetLabel } from '../features/workout/setValues'
+import { planToIcs } from '../lib/ics'
+import { deliverFile } from '../lib/files'
 import { AddExerciseDialog } from '../features/plan/AddExerciseDialog'
 import { Button, Card, EmptyState, PageSkeleton, TextField } from '../components/ui'
 import { NumberField } from '../components/forms'
@@ -50,7 +53,7 @@ function Adjust({ pe, label, onChange }: { pe: PlanExercise; label: string; onCh
 
 export default function Plan() {
   const plan = useLiveQuery(async () => (await getActivePlan()) ?? null)
-  const profile = useLiveQuery(async () => (await db.profile.orderBy('createdAt').last()) ?? null)
+  const profile = useProfile()
   const toast = useToast()
   const [editing, setEditing] = useState(false)
   const [swap, setSwap] = useState<{ si: number; ei: number } | null>(null)
@@ -219,6 +222,20 @@ export default function Plan() {
       />
 
       <div className="flex flex-col items-center gap-2 mt-6 text-sm font-semibold">
+        <Button
+          variant="ghost"
+          className="min-h-11"
+          onClick={async () => {
+            try {
+              await deliverFile(new Blob([planToIcs(activePlan)], { type: 'text/calendar' }), 'stepup-plan.ics', true)
+              toast('Calendar file ready. Open it to add your workout days.')
+            } catch (err) {
+              if ((err as DOMException).name !== 'AbortError') toast('That didn’t work. Please try again.')
+            }
+          }}
+        >
+          Add my workout days to a calendar
+        </Button>
         <Link to="/profile/edit" className="text-accent">
           Rebuild from my preferences
         </Link>

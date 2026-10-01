@@ -13,7 +13,7 @@ const planned: PlanExercise = {
 
 function sets(reps: number | number[], rpe: number, weightKg = 40, count = 3): LoggedSet[] {
   const r = Array.isArray(reps) ? reps : Array.from({ length: count }, () => reps)
-  return r.map((reps, i) => ({ setIndex: i, weightKg, reps, rpe }))
+  return r.map((n, i) => ({ setIndex: i, weightKg, reps: n, rpe }))
 }
 
 function stateAfter(

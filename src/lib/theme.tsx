@@ -17,7 +17,18 @@ function readCachedAppearance(): Appearance {
     : 'system'
 }
 
+const THEME_COLORS = { light: '#ECF3F7', dark: '#10162F' } as const
+
+/** Keeps the browser chrome colour in step with an explicit light/dark choice (the OS setting rules otherwise). */
+function applyThemeColor(appearance: Appearance) {
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    const scheme = /dark/.test(meta.media) ? 'dark' : 'light'
+    meta.content = THEME_COLORS[appearance === 'system' ? scheme : appearance]
+  }
+}
+
 function applyToDocument(appearance: Appearance) {
+  applyThemeColor(appearance)
   const root = document.documentElement
   if (appearance === 'system') {
     root.removeAttribute('data-theme')

@@ -9,7 +9,7 @@ vi.mock('@google/genai', () => ({
 }))
 
 import handler from './weekly-review'
-import { _resetMemoryLimiter } from '../shared/rateLimit'
+import { resetMemoryLimiterForTests } from '../shared/rateLimit'
 import { cleanReview } from '../shared/cleanReview'
 
 const validPayload = {
@@ -51,7 +51,7 @@ function call(over: Partial<{ method: string; body: unknown; headers: Record<str
 }
 
 beforeEach(() => {
-  _resetMemoryLimiter()
+  resetMemoryLimiterForTests()
   generateContent.mockReset()
   generateContent.mockResolvedValue({ text: 'Two of three sessions done. Back squat moved to 90 kg.' })
   process.env.GEMINI_API_KEY = 'test-key'

@@ -1,5 +1,5 @@
 import { db } from '../db/schema'
-import { getActivePlan } from '../db/schema'
+import { getActivePlan, getActiveProfile } from '../db/schema'
 import { getExerciseById, getSubstitutes } from '../db/exerciseLibrary'
 import { daysAgoISO, parseISODateLocal } from './format'
 
@@ -55,7 +55,7 @@ export async function generateWeeklyRecap(): Promise<string> {
     } citing ${reasonLabel}`
 
     if (exercise) {
-      const equipment = (await db.profile.orderBy('createdAt').last())?.equipment ?? []
+      const equipment = (await getActiveProfile())?.equipment ?? []
       const substitute = getSubstitutes(exercise, equipment)[0]
       if (substitute) sentence += ` — consider swapping to ${substitute.name}`
     }

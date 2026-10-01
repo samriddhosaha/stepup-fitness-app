@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
+import { useProfile } from '../db/repo'
 import { getExerciseById, getSubstitutes } from '../db/exerciseLibrary'
 import {
   deleteSet,
@@ -59,7 +60,7 @@ export default function WorkoutActive() {
   const toast = useToast()
   // null = no open session, undefined = still loading
   const session = useLiveQuery(async () => (await getInProgressSession()) ?? null)
-  const profile = useLiveQuery(() => db.profile.orderBy('createdAt').last())
+  const profile = useProfile()
   const restSound = useLiveQuery(async () => Boolean((await db.settings.get('restSound'))?.value), [])
   const unit = useUnit()
 
@@ -119,7 +120,7 @@ export default function WorkoutActive() {
       cancelled = true
     }
     // Re-prefill only when the exercise (or unit) changes, not on every live-query emission.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [currentExerciseId, sessionId, unit])
 
   if (session === undefined) return <PageSkeleton label="Loading your workout" />

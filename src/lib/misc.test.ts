@@ -250,3 +250,14 @@ describe('wipeAllData', () => {
     expect(db.isOpen()).toBe(true)
   })
 })
+
+describe('analytics pruning', () => {
+  it('keeps only the most recent 500 events', async () => {
+    await db.appEvents.clear()
+    await db.appEvents.bulkAdd(Array.from({ length: 505 }, (_, i) => ({ name: 'workout_started', occurredAt: i })))
+    await track('workout_completed')
+    expect(await db.appEvents.count()).toBe(500)
+    const oldest = await db.appEvents.orderBy('occurredAt').first()
+    expect(oldest?.occurredAt).toBe(6) // the first six were dropped
+  })
+})

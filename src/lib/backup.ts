@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { db, setSetting } from '../db/schema'
 import { todayISODate } from './format'
 import { rebuildExerciseStates } from './exerciseStateBackfill'
+import { deliverFile } from './files'
 import type { WorkoutSession } from '../db/types'
 
 // Loaded lazily from the Profile screen so zod stays out of the main bundle.
@@ -287,29 +288,6 @@ export async function importBackupFile(file: File): Promise<ParseResult> {
 }
 
 export const backupFileName = (prefix = 'stepup-backup'): string => `${prefix}-${todayISODate()}.json`
-
-/** Delivers a file: native share sheet where files can be shared, otherwise a download. */
-export async function deliverFile(blob: Blob, filename: string, preferShare: boolean): Promise<'shared' | 'downloaded'> {
-  const file = new File([blob], filename, { type: blob.type })
-  if (preferShare && navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title: filename })
-      return 'shared'
-    } catch (err) {
-      if ((err as DOMException).name === 'AbortError') throw err
-      // share failed for another reason: fall through to download
-    }
-  }
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a) // some browsers ignore clicks on detached anchors
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 10_000)
-  return 'downloaded'
-}
 
 export async function exportAllData(): Promise<'shared' | 'downloaded'> {
   const blob = new Blob([JSON.stringify(await buildBackup(), null, 2)], { type: 'application/json' })

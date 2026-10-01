@@ -33,6 +33,8 @@ export function RouteA11y() {
     }
     timer = setTimeout(settle, 0)
     return () => clearTimeout(timer)
+    // the dependency is a trigger (re-run on change), not a value the effect reads
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [pathname])
 
   return null

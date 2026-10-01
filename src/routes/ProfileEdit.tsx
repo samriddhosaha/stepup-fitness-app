@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { useProfile } from '../db/repo'
 import { db } from '../db/schema'
 import { getExerciseById } from '../db/exerciseLibrary'
 import { generatePlan, trainingDayIndices } from '../lib/plan'
@@ -21,7 +21,7 @@ import { useToast } from '../components/toastContext'
 import type { Profile } from '../db/types'
 
 export default function ProfileEdit() {
-  const profile = useLiveQuery(() => db.profile.orderBy('createdAt').last())
+  const profile = useProfile()
   if (!profile) return <PageSkeleton />
   // keyed so the editable draft starts from the loaded profile without syncing state in an effect
   return <ProfileEditForm key={profile.id} profile={profile} />

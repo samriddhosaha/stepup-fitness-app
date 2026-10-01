@@ -16,7 +16,8 @@ async function notify(title: string, body: string): Promise<void> {
   if (registration) {
     await registration.showNotification(title, { body, icon: '/icons/icon-192.png' })
   } else {
-    new Notification(title, { body, icon: '/icons/icon-192.png' })
+    const n = new Notification(title, { body, icon: '/icons/icon-192.png' })
+    void n
   }
 }
 

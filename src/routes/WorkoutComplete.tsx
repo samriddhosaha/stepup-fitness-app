@@ -118,6 +118,19 @@ export default function WorkoutComplete() {
         )}
       </div>
 
+      {typeof navigator !== 'undefined' && 'share' in navigator && (
+        <Button
+          variant="ghost"
+          className="w-full mb-3"
+          onClick={() =>
+            void navigator
+              .share({ title: 'StepUp', text: `${session.planSessionName}: ${totalSets} sets${session.durationSeconds ? `, ${Math.max(1, Math.round(session.durationSeconds / 60))} min` : ''}.` })
+              .catch(() => undefined)
+          }
+        >
+          Share
+        </Button>
+      )}
       <Button className="w-full" onClick={() => navigate('/dashboard')}>
         Back to dashboard
       </Button>

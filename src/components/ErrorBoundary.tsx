@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { Button } from './ui'
+import { recordError } from '../lib/errorLog'
 
 interface State {
   failed: boolean
@@ -16,6 +17,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[StepUp] unexpected error', error, info.componentStack)
+    void recordError(error)
   }
 
   exportData = async () => {

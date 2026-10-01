@@ -81,10 +81,10 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
 
   const bodyWeights = await db.progressSnapshots.where('date').aboveOrEqual(weekAgo).toArray()
   const sorted = bodyWeights.sort((a, b) => a.date.localeCompare(b.date))
+  const firstReading = sorted[0]
+  const lastReading = sorted.at(-1)
   const bodyWeightTrendKg =
-    sorted.length >= 2
-      ? { start: sorted[0].bodyWeightKg, end: sorted[sorted.length - 1].bodyWeightKg }
-      : null
+    sorted.length >= 2 && firstReading && lastReading ? { start: firstReading.bodyWeightKg, end: lastReading.bodyWeightKg } : null
 
   return {
     sessionsCompleted: completed.length,

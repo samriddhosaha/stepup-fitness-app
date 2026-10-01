@@ -27,6 +27,8 @@ export function WeeklyReviewCard({ aiEnabled }: { aiEnabled: boolean }) {
     return () => {
       cancelled = true
     }
+    // the dependency is a trigger (re-run on change), not a value the effect reads
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [completedCount])
 
   async function load(force: boolean) {

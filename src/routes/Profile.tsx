@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useProfile } from '../db/repo'
 import { db, getSetting, setSetting, wipeAllData } from '../db/schema'
 import { getExerciseById } from '../db/exerciseLibrary'
 import { useTheme } from '../lib/useTheme'
@@ -15,6 +16,9 @@ import {
 import { Button, Card } from '../components/ui'
 import { SegmentedControl } from '../components/forms'
 import { ConfirmDialog } from '../components/overlays'
+import { InstallCard } from '../components/InstallCard'
+import { clearErrorLog, errorLogToText, isErrorLogEnabled, readErrorLog, setErrorLogEnabled } from '../lib/errorLog'
+import { deliverFile } from '../lib/files'
 import { APPEARANCE_OPTIONS, UNIT_OPTIONS, withLabel } from '../lib/options'
 import type { Appearance, WeightUnit } from '../db/types'
 import type { WeeklyReviewPayload } from '../lib/aiCoach'
@@ -28,7 +32,7 @@ type ImportState =
   | { step: 'working' }
 
 export default function Profile() {
-  const profile = useLiveQuery(() => db.profile.orderBy('createdAt').last())
+  const profile = useProfile()
   const { appearance, setAppearance } = useTheme()
   const restSound = useLiveQuery(async () => Boolean((await db.settings.get('restSound'))?.value), [])
   const lastBackupAt = useLiveQuery(async () => (await getSetting<number>('lastBackupAt')) ?? null, [])
@@ -40,9 +44,11 @@ export default function Profile() {
   const [confirmingAICoach, setConfirmingAICoach] = useState(false)
   const [preview, setPreview] = useState<WeeklyReviewPayload | null>(null)
   const [persisted, setPersisted] = useState<boolean | undefined>(undefined)
+  const [logOn, setLogOn] = useState(false)
 
   useEffect(() => {
     void isStoragePersisted().then(setPersisted)
+    void isErrorLogEnabled().then(setLogOn)
   }, [])
 
   if (!profile) return null
@@ -314,6 +320,44 @@ export default function Profile() {
             <p role="status" className="text-sm text-faint mt-3">
               {message}
             </p>
+          )}
+        </Card>
+
+        <InstallCard />
+
+        <Card className="md:col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <p className="label-eyebrow text-faint">Error log</p>
+            <button
+              role="switch"
+              aria-label="Keep an error log on this device"
+              aria-checked={logOn}
+              onClick={async () => {
+                await setErrorLogEnabled(!logOn)
+                setLogOn(!logOn)
+              }}
+              className={`w-12 h-7 rounded-full border border-line relative transition-colors ${logOn ? 'bg-accent' : 'bg-elevated'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full border border-line bg-elevated transition-transform ${logOn ? 'translate-x-4' : ''}`} />
+            </button>
+          </div>
+          <p className="text-sm text-faint">
+            Off by default. When on, technical errors are kept on this device only, so you can share them if you report a problem. Nothing is sent anywhere.
+          </p>
+          {logOn && (
+            <div className="flex gap-3 mt-3">
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  await deliverFile(new Blob([errorLogToText(await readErrorLog())], { type: 'text/plain' }), 'stepup-error-log.txt', false)
+                }}
+              >
+                Export log
+              </Button>
+              <Button variant="ghost" onClick={() => void clearErrorLog().then(() => setMessage('Error log cleared.'))}>
+                Clear
+              </Button>
+            </div>
           )}
         </Card>
 

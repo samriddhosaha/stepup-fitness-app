@@ -1,7 +1,6 @@
 import { lazy, Suspense, type ReactElement } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from './db/schema'
+import { useProfile } from './db/repo'
 import { ThemeProvider } from './lib/theme'
 import { ToastProvider } from './components/overlays'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -37,7 +36,7 @@ const Progress = lazy(() => import('./routes/Progress'))
 // fresh-install case here (no profile yet). Coercing the resolved value to
 // `null` makes those two states distinguishable.
 function useOnboarded(): boolean | undefined {
-  const profile = useLiveQuery(async () => (await db.profile.orderBy('createdAt').last()) ?? null)
+  const profile = useProfile()
   if (profile === undefined) return undefined
   return Boolean(profile?.onboardingCompleted)
 }

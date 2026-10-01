@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { db, getActivePlan, setSetting } from '../db/schema'
+import { useProfile } from '../db/repo'
 import { getExerciseById } from '../db/exerciseLibrary'
 import { discardSession, findTodaysSession, getInProgressSession, todayWeekdayIndex } from '../lib/workout'
 import { activeWeeksInARow, completedThisWeek } from '../lib/consistency'
@@ -25,7 +26,7 @@ function nextSessionAfterToday(sessions: PlanSession[], todayIndex: number): Pla
 export default function Dashboard() {
   const navigate = useNavigate()
   const { begin, dialog } = useStartWorkout()
-  const profile = useLiveQuery(() => db.profile.orderBy('createdAt').last())
+  const profile = useProfile()
   const plan = useLiveQuery(getActivePlan)
   const sessions = useLiveQuery(() => db.workoutSessions.toArray())
   const inProgress = useLiveQuery(async () => (await getInProgressSession()) ?? null)

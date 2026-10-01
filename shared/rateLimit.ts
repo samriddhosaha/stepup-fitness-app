@@ -11,7 +11,7 @@ export interface RateResult {
 const memory = new Map<string, number[]>()
 let warned = false
 
-export function _resetMemoryLimiter(): void {
+export function resetMemoryLimiterForTests(): void {
   memory.clear()
   warned = false
 }
