@@ -157,3 +157,27 @@ export function PageSkeleton({ label = 'Loading' }: { label?: string }) {
     </div>
   )
 }
+
+/**
+ * On/off switch. Track is 48×28 with a 1px border (46×26 inside); the 20px knob sits 3px from
+ * every edge, so it is centred vertically and equally spaced at both ends.
+ */
+export function Switch({ checked, label, onChange }: { checked: boolean; label: string; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-label={label}
+      aria-checked={checked}
+      onClick={onChange}
+      className={`relative h-7 w-12 shrink-0 rounded-full border border-line transition-colors ${checked ? 'bg-accent' : 'bg-elevated'}`}
+    >
+      <span
+        aria-hidden="true"
+        className={`absolute left-[3px] top-[3px] h-5 w-5 rounded-full transition-transform ${
+          checked ? 'translate-x-5 bg-on-accent' : 'translate-x-0 bg-ink'
+        }`}
+      />
+    </button>
+  )
+}

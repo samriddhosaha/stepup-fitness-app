@@ -13,7 +13,7 @@ import {
   shouldNudgeBackup,
   workoutsSinceBackup,
 } from '../lib/storage'
-import { Button, Card } from '../components/ui'
+import { Button, Card, Switch } from '../components/ui'
 import { SegmentedControl } from '../components/forms'
 import { ConfirmDialog } from '../components/overlays'
 import { InstallCard } from '../components/InstallCard'
@@ -180,19 +180,7 @@ export default function Profile() {
         <Card className="md:col-span-2">
           <div className="flex items-center justify-between">
             <p className="label-eyebrow text-faint">Rest timer sound</p>
-            <button
-              role="switch"
-              aria-label="Rest timer sound"
-              aria-checked={Boolean(restSound)}
-              onClick={() => setSetting('restSound', !restSound)}
-              className={`w-12 h-7 rounded-full border border-line relative transition-colors ${restSound ? 'bg-accent' : 'bg-elevated'}`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full border border-line bg-elevated transition-transform ${
-                  restSound ? 'translate-x-4' : ''
-                }`}
-              />
-            </button>
+            <Switch label="Rest timer sound" checked={Boolean(restSound)} onChange={() => setSetting('restSound', !restSound)} />
           </div>
           <p className="text-sm text-faint mt-2">A soft chime when a rest ends. Your phone also buzzes where it can.</p>
         </Card>
@@ -200,21 +188,7 @@ export default function Profile() {
         <Card className="md:col-span-2">
           <div className="flex items-center justify-between mb-1">
             <p className="label-eyebrow text-faint">AI weekly coach</p>
-            <button
-              role="switch"
-              aria-label="AI weekly coach"
-              aria-checked={Boolean(activeProfile.aiCoachEnabled)}
-              onClick={() => (activeProfile.aiCoachEnabled ? setAICoachEnabled(false) : setConfirmingAICoach(true))}
-              className={`w-12 h-7 rounded-full border border-line relative transition-colors ${
-                activeProfile.aiCoachEnabled ? 'bg-accent' : 'bg-elevated'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full border border-line bg-elevated transition-transform ${
-                  activeProfile.aiCoachEnabled ? 'translate-x-4' : ''
-                }`}
-              />
-            </button>
+            <Switch label="AI weekly coach" checked={Boolean(activeProfile.aiCoachEnabled)} onChange={() => (activeProfile.aiCoachEnabled ? setAICoachEnabled(false) : setConfirmingAICoach(true))} />
           </div>
           <p className="text-sm text-faint mt-2">
             Sends your last 7 days of training data to generate a written review. Off by default.
@@ -328,18 +302,10 @@ export default function Profile() {
         <Card className="md:col-span-2">
           <div className="flex items-center justify-between mb-1">
             <p className="label-eyebrow text-faint">Error log</p>
-            <button
-              role="switch"
-              aria-label="Keep an error log on this device"
-              aria-checked={logOn}
-              onClick={async () => {
+            <Switch label="Keep an error log on this device" checked={logOn} onChange={async () => {
                 await setErrorLogEnabled(!logOn)
                 setLogOn(!logOn)
-              }}
-              className={`w-12 h-7 rounded-full border border-line relative transition-colors ${logOn ? 'bg-accent' : 'bg-elevated'}`}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full border border-line bg-elevated transition-transform ${logOn ? 'translate-x-4' : ''}`} />
-            </button>
+              }} />
           </div>
           <p className="text-sm text-faint">
             Off by default. When on, technical errors are kept on this device only, so you can share them if you report a problem. Nothing is sent anywhere.
