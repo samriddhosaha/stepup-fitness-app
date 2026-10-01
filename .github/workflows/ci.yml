@@ -1,0 +1,30 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Bundle size summary
+        run: |
+          {
+            echo "### dist size"
+            du -sh dist
+            echo
+            echo "| file | size |"
+            echo "|---|---|"
+            find dist/assets -name '*.js' -o -name '*.css' | xargs ls -l | awk '{printf "| %s | %.1f kB |\n", $9, $5/1024}'
+          } >> "$GITHUB_STEP_SUMMARY"

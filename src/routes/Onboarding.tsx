@@ -185,7 +185,7 @@ export default function Onboarding() {
           <StepBlock title="What should we call you?">
             <TextField
               label="Name"
-              hint="Used for your progress chart, nothing else. This never changes which exercises you get."
+              hint="Used for your greeting, nothing else."
               value={draft.name}
               onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
               autoFocus
@@ -401,7 +401,7 @@ export default function Onboarding() {
         {step === 8 && (
           <StepBlock title="Anything you enjoy?">
             <p className="text-xs text-faint mb-4">
-              We lean towards these where the plan allows.
+              Saved to your profile. They don't shape your plan yet.
             </p>
             <div className="flex flex-wrap gap-2">
               {PREFERENCE_OPTIONS.map((opt) => (
@@ -437,8 +437,9 @@ export default function Onboarding() {
               </label>
               <label className="block">
                 <span className="block text-sm font-semibold text-ink mb-2">
-                  Injuries or anything else we should work around — we'll
-                  leave these out of your plan entirely.
+                  Injuries or anything else to keep in mind. Saved to your
+                  profile; your plan doesn't change for these yet, so skip or
+                  swap anything that doesn't feel right.
                 </span>
                 <textarea
                   className="w-full rounded-lg border border-line bg-elevated px-4 py-3 text-ink min-h-24 focus:outline-2 focus:outline-accent"
