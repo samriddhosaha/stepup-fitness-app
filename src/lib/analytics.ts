@@ -14,7 +14,6 @@ export type TrackEventName =
   | 'workout_abandoned'
   | 'exercise_skipped'
   | 'pr_achieved'
-  | 'streak_broken'
   | 'data_exported'
   | 'data_imported'
   | 'delete_all_data_invoked'

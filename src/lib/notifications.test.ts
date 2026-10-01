@@ -9,7 +9,7 @@ describe('without the Notification API (e.g. iOS Safari tab)', () => {
     delete (window as unknown as Record<string, unknown>).Notification
     expect(notificationsSupported()).toBe(false)
     await expect(
-      runReminderChecks({ todayScheduledAndIncomplete: true, streak: 3, yesterdayScheduledAndMissed: true }),
+      runReminderChecks({ todayScheduledAndIncomplete: true, yesterdayScheduledAndMissed: true }),
     ).resolves.toBeUndefined()
   })
 })

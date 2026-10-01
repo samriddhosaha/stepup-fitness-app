@@ -5,7 +5,8 @@ import { Button, Chip, StepProgress, TextField } from '../components/ui'
 import { db } from '../db/schema'
 import { generatePlan } from '../lib/plan'
 import { track } from '../lib/analytics'
-import { AGE_RANGE, BODY_WEIGHT_KG_RANGE, HEIGHT_CM_RANGE, rangeErrorMessage } from '../lib/validation'
+import { AGE_RANGE, HEIGHT_CM_RANGE, bodyWeightRangeForUnit, rangeErrorMessage } from '../lib/validation'
+import { parseWeight } from '../lib/units'
 import type {
   Equipment,
   FitnessLevel,
@@ -13,6 +14,7 @@ import type {
   Profile,
   Sex,
   TrainingPreference,
+  WeightUnit,
 } from '../db/types'
 
 const TOTAL_STEPS = 9
@@ -53,7 +55,9 @@ interface DraftProfile {
   age?: number
   sex?: Sex
   heightCm?: number
-  startingWeightKg?: number
+  weightUnit: WeightUnit
+  /** Typed in the chosen unit; converted to kg when the profile is saved. */
+  startingWeightInput: string
   fitnessLevel?: FitnessLevel
   liftsAlready: boolean
   doesCardioAlready: boolean
@@ -69,6 +73,8 @@ interface DraftProfile {
 
 const INITIAL_DRAFT: DraftProfile = {
   name: '',
+  weightUnit: 'kg',
+  startingWeightInput: '',
   liftsAlready: false,
   doesCardioAlready: false,
   daysPerWeek: 3,
@@ -88,6 +94,7 @@ export default function Onboarding() {
   const [step, setStep] = useState(1)
   const [draft, setDraft] = useState<DraftProfile>(INITIAL_DRAFT)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const startedRef = useRef(false)
 
   useEffect(() => {
@@ -100,9 +107,9 @@ export default function Onboarding() {
   const ageError = rangeErrorMessage(String(draft.age ?? ''), AGE_RANGE, 'years')
   const heightError = rangeErrorMessage(String(draft.heightCm ?? ''), HEIGHT_CM_RANGE, 'cm')
   const weightError = rangeErrorMessage(
-    String(draft.startingWeightKg ?? ''),
-    BODY_WEIGHT_KG_RANGE,
-    'kg',
+    draft.startingWeightInput,
+    bodyWeightRangeForUnit(draft.weightUnit),
+    draft.weightUnit,
   )
 
   function canAdvance(): boolean {
@@ -134,12 +141,13 @@ export default function Onboarding() {
 
   async function finishOnboarding() {
     setSubmitting(true)
+    setSubmitError(null)
     const profile: Profile = {
       name: draft.name.trim(),
       age: draft.age,
       sex: draft.sex,
       heightCm: draft.heightCm,
-      startingWeightKg: draft.startingWeightKg,
+      startingWeightKg: parseWeight(draft.startingWeightInput, draft.weightUnit) ?? undefined,
       fitnessLevel: draft.fitnessLevel ?? 'new',
       liftsAlready: draft.liftsAlready,
       doesCardioAlready: draft.doesCardioAlready,
@@ -151,18 +159,24 @@ export default function Onboarding() {
       trainingPreferences: draft.trainingPreferences,
       exclusions: draft.exclusions.trim() || undefined,
       injuries: draft.injuries.trim() || undefined,
-      weightUnit: 'kg',
+      weightUnit: draft.weightUnit,
       appearance: 'system',
       onboardingCompleted: true,
       createdAt: Date.now(),
     }
 
-    await db.profile.add(profile)
-    const plan = generatePlan(profile)
-    await db.plans.add(plan)
-    await track('onboarding_completed')
-
-    navigate('/plan-ready')
+    try {
+      // Profile and plan are written together: never an onboarded user without a plan.
+      await db.transaction('rw', db.profile, db.plans, async () => {
+        await db.profile.add(profile)
+        await db.plans.add(generatePlan(profile))
+      })
+      await track('onboarding_completed')
+      navigate('/plan-ready')
+    } catch {
+      setSubmitError('We couldn’t save your plan. Nothing was lost; please try again.')
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -199,6 +213,21 @@ export default function Onboarding() {
               Used to size your starting program. Stays on this device, like
               everything else.
             </p>
+            <div className="mb-4">
+              <span className="label-eyebrow block text-faint mb-2">Weights in</span>
+              <div className="flex gap-2" role="group" aria-label="Weight unit">
+                {(['kg', 'lb'] as WeightUnit[]).map((u) => (
+                  <Chip
+                    key={u}
+                    active={draft.weightUnit === u}
+                    aria-pressed={draft.weightUnit === u}
+                    onClick={() => setDraft((d) => ({ ...d, weightUnit: u }))}
+                  >
+                    {u}
+                  </Chip>
+                ))}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <TextField
                 label="Age"
@@ -247,19 +276,14 @@ export default function Onboarding() {
                 }
               />
               <TextField
-                label="Starting weight (kg)"
+                label={`Starting weight (${draft.weightUnit})`}
                 type="number"
                 inputMode="decimal"
-                min={BODY_WEIGHT_KG_RANGE.min}
-                max={BODY_WEIGHT_KG_RANGE.max}
+                min={bodyWeightRangeForUnit(draft.weightUnit).min}
+                max={bodyWeightRangeForUnit(draft.weightUnit).max}
                 error={weightError}
-                value={draft.startingWeightKg ?? ''}
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    startingWeightKg: e.target.value ? Number(e.target.value) : undefined,
-                  }))
-                }
+                value={draft.startingWeightInput}
+                onChange={(e) => setDraft((d) => ({ ...d, startingWeightInput: e.target.value }))}
               />
             </div>
           </StepBlock>
@@ -456,6 +480,11 @@ export default function Onboarding() {
         )}
       </div>
 
+      {submitError && (
+        <p role="alert" className="text-sm font-semibold text-danger mt-6">
+          {submitError}
+        </p>
+      )}
       <Button
         className="w-full mt-8"
         disabled={!canAdvance() || submitting}

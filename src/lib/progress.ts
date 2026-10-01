@@ -1,5 +1,6 @@
 import { db } from '../db/schema'
 import { weekStartOfISO } from './format'
+import { estimatedOneRepMax } from './records'
 import type { WorkoutSession } from '../db/types'
 
 export interface SeriesPoint {
@@ -30,10 +31,6 @@ export async function weeklyVolumeSeries(): Promise<SeriesPoint[]> {
     .map(([date, value]) => ({ date, value: Math.round(value) }))
 }
 
-function estimatedOneRepMax(weightKg: number, reps: number): number {
-  return weightKg * (1 + reps / 30)
-}
-
 export async function liftProgressionSeries(exerciseId: string): Promise<SeriesPoint[]> {
   const sessions = await db.workoutSessions.where('completedAt').above(0).toArray()
   const points: SeriesPoint[] = []
@@ -42,7 +39,7 @@ export async function liftProgressionSeries(exerciseId: string): Promise<SeriesP
     if (!entry) continue
     const best = entry.sets.reduce((max, set) => {
       if (!set.weightKg || !set.reps) return max
-      return Math.max(max, estimatedOneRepMax(set.weightKg, set.reps))
+      return Math.max(max, estimatedOneRepMax(set.weightKg, set.reps) ?? 0)
     }, 0)
     if (best > 0) points.push({ date: s.date, value: Math.round(best * 10) / 10 })
   }

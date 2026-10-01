@@ -9,9 +9,6 @@ const XP_LABELS: Record<string, string> = {
   exercise: 'Exercise completed',
   workout: 'Workout completed',
   pr: 'Personal record',
-  streak: 'Streak milestone',
-  'weekly-mission': 'Weekly mission',
-  loss: 'Missed or skipped',
 }
 
 export default function ProgressXP() {

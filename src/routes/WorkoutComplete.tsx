@@ -1,12 +1,21 @@
-import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
-import type { PersonalRecord } from '../db/types'
+import type { PersonalRecord, WeightUnit } from '../db/types'
 import { getExerciseById } from '../db/exerciseLibrary'
 import { formatDuration } from '../lib/format'
+import { formatWeight } from '../lib/units'
+import { useUnit } from '../lib/useUnit'
 import { notificationsSupported, requestNotificationPermission } from '../lib/notifications'
-import { Button, Card } from '../components/ui'
+import { requestPersistentStorage } from '../lib/storage'
+import { Button, Card, PageSkeleton } from '../components/ui'
+
+function prLabel(pr: PersonalRecord, unit: WeightUnit): string {
+  if (pr.kind === 'reps') return `${pr.value} reps`
+  if (pr.kind === 'weight') return `${formatWeight(pr.value, unit)} lifted`
+  return `${formatWeight(pr.value, unit)} est.`
+}
 
 export default function WorkoutComplete() {
   const navigate = useNavigate()
@@ -20,21 +29,28 @@ export default function WorkoutComplete() {
   const prs = useLiveQuery(
     (): Promise<PersonalRecord[]> =>
       sessionId
-        ? db.personalRecords.filter((r) => Math.abs(r.achievedAt - (session?.completedAt ?? 0)) < 60_000).toArray()
+        ? db.personalRecords
+            .where('sessionId')
+            .equals(sessionId)
+            .filter((r) => !r.baseline)
+            .toArray()
         : Promise.resolve([]),
-    [sessionId, session?.completedAt],
+    [sessionId],
   )
   const completedCount = useLiveQuery(() =>
     db.workoutSessions.filter((s) => Boolean(s.completedAt)).count(),
   )
   const [notifDismissed, setNotifDismissed] = useState(false)
+  const unit = useUnit()
 
-  if (sessionId === undefined) {
-    navigate('/dashboard', { replace: true })
-    return null
-  }
+  // After the very first finished workout there is something worth protecting from browser clean-up.
+  useEffect(() => {
+    if (completedCount === 1) void requestPersistentStorage()
+  }, [completedCount])
 
-  if (!session) return null
+  if (sessionId === undefined) return <Navigate to="/dashboard" replace />
+
+  if (!session) return <PageSkeleton />
 
   const totalSets = session.exercises.reduce((sum, e) => sum + e.sets.length, 0)
   const showNotificationAsk =
@@ -69,7 +85,7 @@ export default function WorkoutComplete() {
             <p className="label-eyebrow text-faint mb-2">New personal best</p>
             {prs.map((pr) => (
               <p key={pr.id} className="text-sm font-semibold">
-                {getExerciseById(pr.exerciseId)?.name} — {pr.value} kg est.
+                {getExerciseById(pr.exerciseId)?.name} — {prLabel(pr, unit)}
               </p>
             ))}
           </Card>
@@ -79,8 +95,8 @@ export default function WorkoutComplete() {
           <Card>
             <p className="text-sm font-semibold mb-1">Get reminded, gently</p>
             <p className="text-xs text-faint mb-3">
-              A quiet nudge if a scheduled day passes without a workout, or
-              your streak is about to lapse. Nothing else.
+              A quiet nudge if a scheduled day passes without a workout.
+              Nothing else.
             </p>
             <div className="flex gap-3">
               <Button variant="ghost" className="flex-1" onClick={() => setNotifDismissed(true)}>

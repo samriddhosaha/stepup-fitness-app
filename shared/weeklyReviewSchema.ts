@@ -40,7 +40,7 @@ export const weeklyReviewSchema = z
     prs: z
       .array(z.object({ exerciseId, value: z.number().min(0).max(2000) }).strict())
       .max(40),
-    streak: z.number().int().min(0).max(1000),
+    activeWeeksInARow: z.number().int().min(0).max(1000),
     bodyWeightTrendKg: z
       .object({ start: z.number().min(20).max(500), end: z.number().min(20).max(500) })
       .strict()

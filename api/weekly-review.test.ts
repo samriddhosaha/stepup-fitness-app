@@ -18,7 +18,7 @@ const validPayload = {
   exercises: [{ exerciseId: 'back-squat', totalSets: 6, avgRpe: 3.2, metTargetRange: true }],
   skips: [{ exerciseId: 'goblet-squat', reason: 'too-difficult', count: 1 }],
   prs: [{ exerciseId: 'back-squat', value: 90 }],
-  streak: 2,
+  activeWeeksInARow: 2,
   bodyWeightTrendKg: { start: 80, end: 79.5 },
 }
 

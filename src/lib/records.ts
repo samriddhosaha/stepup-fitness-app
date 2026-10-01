@@ -1,49 +1,69 @@
 import { db } from '../db/schema'
-import type { LoggedExercise, PersonalRecord } from '../db/types'
+import type { LoggedExercise, PersonalRecord, PRKind } from '../db/types'
 
-function estimatedOneRepMax(weightKg: number, reps: number): number {
-  // Epley formula — a simple, standard estimate, not a physiological claim.
+/** Epley. Unreliable well past ~12 reps, so higher-rep sets don't produce an estimate (C-15). */
+export function estimatedOneRepMax(weightKg: number, reps: number): number | undefined {
+  if (reps < 1 || reps > 12) return undefined
   return weightKg * (1 + reps / 30)
 }
 
+interface Candidate {
+  kind: PRKind
+  value: number
+  reps: number
+}
+
+/** The single best performance in a session for one exercise, and what kind of record it would be. */
+export function bestCandidate(ex: LoggedExercise): Candidate | undefined {
+  let e1rm: Candidate | undefined
+  let heaviest: Candidate | undefined
+  let mostReps: Candidate | undefined
+  for (const set of ex.sets) {
+    const reps = set.reps ?? 0
+    if (reps <= 0) continue
+    if (set.weightKg && set.weightKg > 0) {
+      const est = estimatedOneRepMax(set.weightKg, reps)
+      if (est !== undefined && (!e1rm || est > e1rm.value)) e1rm = { kind: 'e1rm', value: est, reps }
+      if (!heaviest || set.weightKg > heaviest.value) heaviest = { kind: 'weight', value: set.weightKg, reps }
+    } else if (!mostReps || reps > mostReps.value) {
+      mostReps = { kind: 'reps', value: reps, reps }
+    }
+  }
+  const best = e1rm ?? heaviest ?? mostReps
+  return best && { ...best, value: Math.round(best.value * 10) / 10 }
+}
+
 /**
- * Compares each logged set against the exerciseId's best-known estimated
- * 1RM and records any new personal records. Returns the ones that were
- * actually new, so the caller can celebrate them.
+ * Records the session's best performance per exercise.
+ * - The first log of an exercise (or of a new kind of metric) is stored silently as a baseline: no PR, no XP.
+ * - Afterwards only a strict improvement over that kind's best counts as a PR.
+ * Call inside a transaction that includes `personalRecords`. Returns the genuine (non-baseline) PRs.
  */
-export async function checkAndRecordPRs(
+export async function recordSessionPRs(
+  sessionId: number,
   exercises: LoggedExercise[],
+  achievedAt = Date.now(),
 ): Promise<PersonalRecord[]> {
   const newRecords: PersonalRecord[] = []
-
   for (const ex of exercises) {
-    let bestSet: { weightKg: number; reps: number; e1rm: number } | undefined
-    for (const set of ex.sets) {
-      if (!set.weightKg || !set.reps) continue
-      const e1rm = estimatedOneRepMax(set.weightKg, set.reps)
-      if (!bestSet || e1rm > bestSet.e1rm) {
-        bestSet = { weightKg: set.weightKg, reps: set.reps, e1rm }
-      }
-    }
-    if (!bestSet) continue
+    const cand = bestCandidate(ex)
+    if (!cand) continue
 
-    const existingBest = await db.personalRecords
-      .where('exerciseId')
-      .equals(ex.exerciseId)
-      .toArray()
-    const priorBestValue = existingBest.reduce((max, r) => Math.max(max, r.value), 0)
+    const prior = await db.personalRecords.where('exerciseId').equals(ex.exerciseId).toArray()
+    // Pre-v2 rows have no kind and were all estimated 1RMs.
+    const sameKind = prior.filter((r) => (r.kind ?? 'e1rm') === cand.kind)
+    const priorBest = sameKind.reduce((max, r) => Math.max(max, r.value), 0)
 
-    if (bestSet.e1rm > priorBestValue) {
-      const record: PersonalRecord = {
-        exerciseId: ex.exerciseId,
-        value: Math.round(bestSet.e1rm * 10) / 10,
-        reps: bestSet.reps,
-        achievedAt: Date.now(),
-      }
+    const base = { exerciseId: ex.exerciseId, value: cand.value, reps: cand.reps, achievedAt, sessionId, kind: cand.kind }
+    if (sameKind.length === 0) {
+      await db.personalRecords.add({ ...base, baseline: true })
+    } else if (cand.value > priorBest) {
+      const record: PersonalRecord = { ...base }
       const id = await db.personalRecords.add(record)
       newRecords.push({ ...record, id })
     }
   }
-
   return newRecords
 }
+
+export const isRealPR = (r: PersonalRecord): boolean => !r.baseline

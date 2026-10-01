@@ -98,7 +98,15 @@ export function TrendLineChart({
   )
 }
 
-export function VolumeBarChart({ data, emptyLabel }: { data: SeriesPoint[]; emptyLabel: string }) {
+export function VolumeBarChart({
+  data,
+  emptyLabel,
+  unit = 'kg',
+}: {
+  data: SeriesPoint[]
+  emptyLabel: string
+  unit?: string
+}) {
   if (data.length === 0) {
     return <p className="text-sm text-faint py-8 text-center">{emptyLabel}</p>
   }
@@ -119,7 +127,7 @@ export function VolumeBarChart({ data, emptyLabel }: { data: SeriesPoint[]; empt
           minTickGap={24}
         />
         <YAxis tick={{ fill: faint, fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
-        <Tooltip content={<ChartTooltip unit="kg" />} />
+        <Tooltip content={<ChartTooltip unit={unit} />} />
         <Bar dataKey="value" fill={accent} radius={[0, 0, 0, 0]} maxBarSize={24} />
       </BarChart>
     </ResponsiveContainer>

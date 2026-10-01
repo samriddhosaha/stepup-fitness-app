@@ -4,17 +4,22 @@ import { db } from '../db/schema'
 import { EXERCISE_LIBRARY } from '../db/exerciseLibrary'
 import { bodyWeightSeries, liftProgressionSeries, weeklyVolumeSeries } from '../lib/progress'
 import { kgToDisplay, todayISODate, unitLabel } from '../lib/format'
+import { formatWeight, parseWeight } from '../lib/units'
+import { useUnit } from '../lib/useUnit'
+import { isRealPR } from '../lib/records'
 import { bodyWeightRangeForUnit, rangeErrorMessage } from '../lib/validation'
 import { Button, Card } from '../components/ui'
 import { TrendLineChart, VolumeBarChart } from '../components/Charts'
 
 export default function Progress() {
-  const profile = useLiveQuery(() => db.profile.orderBy('createdAt').last())
+  const unit = useUnit()
   const [weightInput, setWeightInput] = useState('')
 
   const bodyWeight = useLiveQuery(bodyWeightSeries, [])
   const volume = useLiveQuery(weeklyVolumeSeries, [])
-  const prs = useLiveQuery(() => db.personalRecords.orderBy('achievedAt').reverse().toArray())
+  const prs = useLiveQuery(async () =>
+    (await db.personalRecords.orderBy('achievedAt').reverse().toArray()).filter(isRealPR),
+  )
 
   const liftOptions = EXERCISE_LIBRARY.filter((e) =>
     ['squat', 'hinge', 'press', 'pull'].includes(e.movementPattern),
@@ -25,13 +30,13 @@ export default function Progress() {
     [selectedLift],
   )
 
-  const unit = profile?.weightUnit ?? 'kg'
   const weightRange = bodyWeightRangeForUnit(unit)
   const weightError = rangeErrorMessage(weightInput, weightRange, unitLabel(unit))
 
   async function logBodyWeight() {
     if (!weightInput || weightError) return
-    const kg = unit === 'lb' ? Number(weightInput) * 0.45359237 : Number(weightInput)
+    const kg = parseWeight(weightInput, unit)
+    if (kg === null) return
     await db.progressSnapshots.add({ date: todayISODate(), bodyWeightKg: kg })
     setWeightInput('')
   }
@@ -73,7 +78,8 @@ export default function Progress() {
         <Card>
           <p className="label-eyebrow text-faint mb-3">Weekly training volume</p>
           <VolumeBarChart
-            data={volume ?? []}
+            data={(volume ?? []).map((p) => ({ ...p, value: Math.round(kgToDisplay(p.value, unit)) }))}
+            unit={unitLabel(unit)}
             emptyLabel="Complete a few workouts to see your weekly volume."
           />
         </Card>
@@ -95,8 +101,8 @@ export default function Progress() {
             </select>
           </div>
           <TrendLineChart
-            data={liftSeries ?? []}
-            unit="kg est."
+            data={(liftSeries ?? []).map((p) => ({ ...p, value: kgToDisplay(p.value, unit) }))}
+            unit={`${unitLabel(unit)} est.`}
             emptyLabel="Log a few sessions of this lift to see your trend."
           />
         </Card>
@@ -112,7 +118,11 @@ export default function Progress() {
                   <span className="font-semibold">
                     {EXERCISE_LIBRARY.find((e) => e.id === pr.exerciseId)?.name ?? pr.exerciseId}
                   </span>
-                  <span className="text-faint">{pr.value} kg est.</span>
+                  <span className="text-faint">
+                    {pr.kind === 'reps'
+                      ? `${pr.value} reps`
+                      : `${formatWeight(pr.value, unit)}${pr.kind === 'weight' ? '' : ' est.'}`}
+                  </span>
                 </li>
               ))}
             </ul>

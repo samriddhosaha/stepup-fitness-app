@@ -146,6 +146,11 @@ function buildConditioningSession(
   }
 }
 
+/** Rough duration: ~9 minutes per exercise including rest. */
+export function estimateSessionMinutes(session: PlanSession): number {
+  return Math.max(10, session.exercises.length * 9)
+}
+
 export function generatePlan(profile: Profile): Plan {
   const days = Math.min(Math.max(profile.daysPerWeek, 1), 6)
   const sessions: PlanSession[] = []

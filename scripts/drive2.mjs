@@ -69,7 +69,7 @@ for (let guard = 0; guard < 10; guard++) {
   const onComplete = await page.locator('text=Workout complete.').isVisible().catch(() => false)
   if (onComplete) break
   await completeExercise()
-  await page.waitForTimeout(300)
+  await page.waitForTimeout(1200)
 }
 
 await page.waitForSelector('text=Workout complete.', { timeout: 10000 })

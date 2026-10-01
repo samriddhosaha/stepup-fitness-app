@@ -74,7 +74,7 @@ function buildUserMessage(p: WeeklyReviewPayload): string | null {
       exercises: p.exercises.map(({ exerciseId, ...rest }) => ({ exerciseName: name(exerciseId), ...rest })),
       skips: p.skips.map(({ exerciseId, ...rest }) => ({ exerciseName: name(exerciseId), ...rest })),
       prs: p.prs.map(({ exerciseId, ...rest }) => ({ exerciseName: name(exerciseId), ...rest })),
-      streak: p.streak,
+      activeWeeksInARow: p.activeWeeksInARow,
       bodyWeightTrendKg: p.bodyWeightTrendKg,
     },
     null,

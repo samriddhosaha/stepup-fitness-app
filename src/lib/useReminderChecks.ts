@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { db, getActivePlan } from '../db/schema'
-import { computeStreak, isTodayScheduledAndIncomplete } from './streak'
+import { isTodayScheduledAndIncomplete } from './consistency'
 import { runReminderChecks } from './notifications'
-import { daysAgoISO, weekdayIndexOfISO } from './format'
+import { daysAgoISO, todayISODate, weekdayIndexOfISO } from './format'
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000
 
@@ -25,8 +25,12 @@ export async function runChecks() {
     yesterdayScheduled && !sessions.some((s) => s.date === yesterday && s.completedAt)
 
   await runReminderChecks({
-    todayScheduledAndIncomplete: isTodayScheduledAndIncomplete(plan, sessions),
-    streak: computeStreak(plan, sessions),
+    todayScheduledAndIncomplete: isTodayScheduledAndIncomplete(
+      plan,
+      sessions,
+      todayISODate(),
+      weekdayIndexOfISO(todayISODate()),
+    ),
     yesterdayScheduledAndMissed,
   })
 }

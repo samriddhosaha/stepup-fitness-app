@@ -16,11 +16,11 @@ const SECTIONS = [
   },
   {
     title: 'How your plan works',
-    body: 'Your plan is built from what you told us: goal, days available, equipment, and experience. The loads it suggests are a starting point — pick the weight that feels right for the rep range, and log what you actually lift.',
+    body: 'Your plan is built from what you told us: goal, days available, equipment, and experience. The first loads are an estimate. After that, StepUp suggests your next weight from what you actually lifted: add a little once every set reaches the top of the rep range at a manageable effort, hold when it was heavy, and ease back after two tough sessions in a row.',
   },
   {
-    title: 'Streaks',
-    body: 'A streak counts consecutive scheduled workouts completed. Rest days never break it; a missed scheduled day ends it.',
+    title: 'Consistency',
+    body: 'Consistency counts weeks, not days: any week with at least one workout keeps the run going. A single quiet week is forgiven, and rest days never matter.',
   },
 ]
 

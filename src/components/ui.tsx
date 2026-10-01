@@ -20,7 +20,11 @@ export function Button({
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-lg bg-elevated border border-line p-5 shadow-soft-sm ${className}`}>{children}</div>
+    <div
+      className={`rounded-lg border border-line p-5 shadow-soft-sm ${/bg-/.test(className) ? '' : 'bg-elevated'} ${className}`}
+    >
+      {children}
+    </div>
   )
 }
 
@@ -115,6 +119,21 @@ export function WeekDots({ done, planned }: { done: number; planned: number }) {
           aria-hidden="true"
         />
       ))}
+    </div>
+  )
+}
+
+/** Placeholder block shown while data loads, instead of a blank screen. */
+export function Skeleton({ className = '' }: { className?: string }) {
+  return <div aria-hidden="true" className={`animate-pulse rounded-lg bg-hairline/60 ${className}`} />
+}
+
+export function PageSkeleton({ label = 'Loading' }: { label?: string }) {
+  return (
+    <div role="status" aria-label={label} className="space-y-4">
+      <Skeleton className="h-5 w-32" />
+      <Skeleton className="h-40" />
+      <Skeleton className="h-24" />
     </div>
   )
 }
