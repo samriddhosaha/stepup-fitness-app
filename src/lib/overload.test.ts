@@ -179,3 +179,58 @@ describe('warmupSets', () => {
     expect(new Set(weights).size).toBe(weights.length)
   })
 })
+
+describe('tracking types', () => {
+  const plank: PlanExercise = { exerciseId: 'plank', targetSets: 3, targetRepsLow: 20, targetRepsHigh: 45 }
+  const timed = (secs: number[], rpe = 2): LoggedSet[] => secs.map((durationSeconds, i) => ({ setIndex: i, durationSeconds, rpe }))
+
+  it('asks a lifter to calibrate the first time they meet a loaded exercise', () => {
+    const squat: PlanExercise = { exerciseId: 'goblet-squat', targetSets: 3, targetRepsLow: 8, targetRepsHigh: 12 }
+    const s = suggestNextLoad(squat, [], undefined, { unit: 'kg', tracking: 'weight-reps' })
+    expect(s).toMatchObject({ needsCalibration: true, action: 'hold' })
+    expect(s.suggestedWeightKg).toBeUndefined()
+    // once there is history it behaves normally
+    const state = nextExerciseState(undefined, 'goblet-squat', squat, sets(12, 2, 16), '2026-01-01', 1, 'weight-reps')
+    expect(suggestNextLoad(squat, [], state, { unit: 'kg', tracking: 'weight-reps' }).needsCalibration).toBeUndefined()
+  })
+
+  it('does not ask bodyweight movements to calibrate', () => {
+    const pu: PlanExercise = { exerciseId: 'push-up', targetSets: 3, targetRepsLow: 8, targetRepsHigh: 12 }
+    expect(suggestNextLoad(pu, [], undefined, { unit: 'kg', tracking: 'bodyweight-reps' }).needsCalibration).toBeUndefined()
+  })
+
+  it('holds progress in seconds and adds five once every set reaches the top', () => {
+    const state = nextExerciseState(undefined, 'plank', plank, timed([45, 45, 45]), '2026-01-01', 1, 'duration')
+    const s = suggestNextLoad(plank, [], state, { unit: 'kg', tracking: 'duration' })
+    expect(s).toMatchObject({ action: 'increase', suggestedReps: 50, measure: 'seconds' })
+    expect(s.message).toContain('seconds')
+    const short = nextExerciseState(undefined, 'plank', plank, timed([30, 40, 35]), '2026-01-01', 1, 'duration')
+    expect(suggestNextLoad(plank, [], short, { unit: 'kg', tracking: 'duration' }).action).toBe('hold')
+  })
+
+  it('treats carries as weighted holds: heavier once the time is reached', () => {
+    const carry: PlanExercise = { exerciseId: 'farmers-carry', targetSets: 3, targetRepsLow: 30, targetRepsHigh: 60 }
+    const logged: LoggedSet[] = [0, 1, 2].map((i) => ({ setIndex: i, weightKg: 20, durationSeconds: 60, rpe: 2 }))
+    const state = nextExerciseState(undefined, 'farmers-carry', carry, logged, '2026-01-01', 1, 'duration')
+    const s = suggestNextLoad(carry, [], state, { unit: 'kg', tracking: 'duration' })
+    expect(s.action).toBe('increase')
+    expect(s.suggestedWeightKg).toBeGreaterThan(20)
+  })
+
+  it('reads distance-time sets in minutes and grows the target about 10%', () => {
+    const jog: PlanExercise = { exerciseId: 'easy-jog', targetSets: 1, targetRepsLow: 15, targetRepsHigh: 30 }
+    const state = nextExerciseState(undefined, 'easy-jog', jog, [{ setIndex: 0, durationSeconds: 30 * 60, distanceM: 4500, rpe: 2 }], '2026-01-01', 1, 'distance-time')
+    expect(state?.lastReps).toEqual([30])
+    expect(suggestNextLoad(jog, [], state, { unit: 'kg', tracking: 'distance-time' })).toMatchObject({
+      action: 'increase',
+      suggestedReps: 33,
+      measure: 'minutes',
+    })
+  })
+
+  it('backs off a held exercise after two hard failed sessions', () => {
+    let state = nextExerciseState(undefined, 'plank', plank, timed([10, 12, 10], 5), '2026-01-01', 1, 'duration')
+    state = nextExerciseState(state, 'plank', plank, timed([10, 12, 10], 5), '2026-01-08', 2, 'duration')
+    expect(suggestNextLoad(plank, [], state, { unit: 'kg', tracking: 'duration' })).toMatchObject({ action: 'decrease', suggestedReps: 20 })
+  })
+})

@@ -4,6 +4,7 @@ import { awardXP } from './xp'
 import { recordSessionPRs } from './records'
 import { nextExerciseState } from './overload'
 import { rebuildExerciseStates } from './exerciseStateBackfill'
+import { getExerciseById } from '../db/exerciseLibrary'
 import { REPS_RANGE, isInRange, WORKOUT_LOAD_KG_RANGE } from './validation'
 import type {
   LoggedSet,
@@ -118,6 +119,8 @@ export async function logSet(
   if (set.weightKg !== undefined && !isInRange(set.weightKg, WORKOUT_LOAD_KG_RANGE)) {
     return { ok: false, reason: 'out-of-range' }
   }
+  if (hasDuration && !isInRange(set.durationSeconds!, { min: 1, max: 6 * 3600 })) return { ok: false, reason: 'out-of-range' }
+  if (set.distanceM !== undefined && !isInRange(set.distanceM, { min: 0, max: 500_000 })) return { ok: false, reason: 'out-of-range' }
 
   return db.transaction('rw', db.workoutSessions, async (): Promise<LogResult> => {
     const session = await db.workoutSessions.get(sessionId)
@@ -228,7 +231,8 @@ export async function finishSession(
       for (const ex of logged) {
         const planned = plannedFor(ex.exerciseId)
         const prev = await db.exerciseState.get(ex.exerciseId)
-        const next = nextExerciseState(prev, ex.exerciseId, planned, ex.sets, session.date, now)
+        const tracking = getExerciseById(ex.exerciseId)?.trackingType
+        const next = nextExerciseState(prev, ex.exerciseId, planned, ex.sets, session.date, now, tracking)
         if (next) await db.exerciseState.put(next)
         for (let i = 0; i < ex.sets.length; i += 1) await awardXP('set', ex.exerciseId)
         if (ex.sets.length >= (planned?.targetSets ?? 3)) await awardXP('exercise', ex.exerciseId)

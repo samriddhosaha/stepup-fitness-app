@@ -16,6 +16,11 @@ export function WorkoutDialogs({
   onSaveAndExit,
   onDiscard,
   onFinish,
+  painExerciseName,
+  painReplacement,
+  onPainReplace,
+  onPainRemove,
+  onPainDismiss,
 }: {
   panel: WorkoutPanel
   close: () => void
@@ -26,6 +31,11 @@ export function WorkoutDialogs({
   onSaveAndExit: () => void
   onDiscard: () => void
   onFinish: () => void
+  painExerciseName?: string
+  painReplacement?: Exercise
+  onPainReplace: () => void
+  onPainRemove: () => void
+  onPainDismiss: () => void
 }) {
   return (
     <>
@@ -73,6 +83,24 @@ export function WorkoutDialogs({
           </Button>
           <Button variant="ghost" onClick={close}>
             Stay
+          </Button>
+        </div>
+      </Dialog>
+
+      <Dialog open={panel === 'pain'} onClose={onPainDismiss} title={`Stop suggesting ${painExerciseName ?? 'this'}?`}>
+        <p className="text-sm text-faint mb-4">
+          Noted, and thanks for telling us. StepUp will keep it out of your plans and swap lists from now on. If something keeps hurting,
+          it’s worth checking in with a professional.
+        </p>
+        <div className="flex flex-col gap-3">
+          {painReplacement && (
+            <Button onClick={onPainReplace}>Replace it with {painReplacement.name}</Button>
+          )}
+          <Button variant="secondary" onClick={onPainRemove}>
+            Just take it out of my plan
+          </Button>
+          <Button variant="ghost" onClick={onPainDismiss}>
+            Not now
           </Button>
         </div>
       </Dialog>

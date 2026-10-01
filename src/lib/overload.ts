@@ -2,6 +2,7 @@ import type {
   ExerciseState,
   LoggedSet,
   PlanExercise,
+  TrackingType,
   WarmupRampSet,
   WeightUnit,
 } from '../db/types'
@@ -10,11 +11,27 @@ import { fineStep, formatWeight, kgToUnit, roundToUnitGrid, unitToKg } from './u
 
 export type OverloadAction = 'increase' | 'decrease' | 'hold'
 
+export type Measure = 'reps' | 'seconds' | 'minutes'
+
 export interface OverloadSuggestion {
   action: OverloadAction
   suggestedWeightKg?: number
+  /** Next target in `measure` units (reps, seconds or minutes). */
   suggestedReps?: number
+  measure?: Measure
+  /** True when there is no history and no load to start from: the lifter should calibrate. */
+  needsCalibration?: boolean
   message: string
+}
+
+export const measureFor = (tracking: TrackingType | undefined): Measure =>
+  tracking === 'duration' ? 'seconds' : tracking === 'distance-time' ? 'minutes' : 'reps'
+
+/** What one logged set contributed, in the exercise's own measure. */
+function measureOfSet(s: LoggedSet, tracking: TrackingType | undefined): number {
+  if (tracking === 'distance-time') return Math.round(((s.durationSeconds ?? 0) / 60) * 10) / 10
+  if (tracking === 'duration') return s.durationSeconds ?? s.reps ?? 0
+  return s.reps ?? s.durationSeconds ?? 0
 }
 
 export type TargetReps = Pick<PlanExercise, 'targetSets' | 'targetRepsLow' | 'targetRepsHigh'>
@@ -46,12 +63,13 @@ export function nextExerciseState(
   sets: LoggedSet[],
   date: string,
   now = Date.now(),
+  tracking?: TrackingType,
 ): ExerciseState | undefined {
   const working = sets.filter(isWorkingSet)
   if (working.length === 0) return prev
 
   const weights = working.map((s) => s.weightKg ?? 0).filter((w) => w > 0)
-  const lastReps = working.map((s) => s.reps ?? s.durationSeconds ?? 0)
+  const lastReps = working.map((s) => measureOfSet(s, tracking))
   const lastRpe = average(working.map((s) => s.rpe ?? NaN))
 
   const belowLow = planned !== undefined && lastReps.some((r) => r < planned.targetRepsLow)
@@ -89,10 +107,11 @@ function stateFromHistory(
   planned: TargetReps,
   exerciseId: string,
   history: LoggedSet[][],
+  tracking?: TrackingType,
 ): ExerciseState | undefined {
   const last = history[0]
   if (!last) return undefined
-  return nextExerciseState(undefined, exerciseId, planned, last, '', 0)
+  return nextExerciseState(undefined, exerciseId, planned, last, '', 0, tracking)
 }
 
 /**
@@ -104,10 +123,11 @@ export function suggestNextLoad(
   planned: PlanExercise,
   history: LoggedSet[][],
   state: ExerciseState | undefined,
-  opts: { unit: WeightUnit },
+  opts: { unit: WeightUnit; tracking?: TrackingType },
 ): OverloadSuggestion {
-  const { unit } = opts
-  const s = state ?? stateFromHistory(planned, planned.exerciseId, history)
+  const { unit, tracking } = opts
+  const measure = measureFor(tracking)
+  const s = state ?? stateFromHistory(planned, planned.exerciseId, history, tracking)
   const base = s?.workingWeightKg ?? planned.startingLoadKg
   const lastReps = s?.lastReps ?? []
   const avgRpe = s?.lastRpe
@@ -119,24 +139,37 @@ export function suggestNextLoad(
   const lowEffort = avgRpe !== undefined && avgRpe <= LOW_EFFORT_RPE
   const fails = s?.consecutiveFails ?? 0
 
-  // Bodyweight / no-load movements progress through reps.
+  // First time with a loaded lift: don't guess a weight, ask them to find one.
+  if (tracking === 'weight-reps' && !hadData && (base === undefined || base <= 0)) {
+    return {
+      action: 'hold',
+      needsCalibration: true,
+      measure,
+      message: 'First time with this one. Pick a weight you could lift about 10 times with good form.',
+    }
+  }
+
+  // Bodyweight / no-load movements progress through reps, seconds or minutes.
   if (base === undefined || base <= 0) {
     if (allHitTop && !highEffort) {
-      const target = planned.targetRepsHigh + 2
+      const bump = measure === 'seconds' ? 5 : measure === 'minutes' ? Math.max(1, Math.round(planned.targetRepsHigh * 0.1)) : 2
+      const target = planned.targetRepsHigh + bump
       return {
         action: 'increase',
         suggestedReps: target,
-        message: `You cleared ${planned.targetRepsHigh} reps on every set. Aim for ${target}.`,
+        measure,
+        message: `You reached ${planned.targetRepsHigh} ${measure} on every set. Aim for ${target}.`,
       }
     }
     if (fails >= DELOAD_AFTER_FAILS) {
       return {
         action: 'decrease',
         suggestedReps: planned.targetRepsLow,
-        message: 'Those sets have been a grind. Ease back to the lower end of the range and build again.',
+        measure,
+        message: `Those sets have been a grind. Ease back to the lower end (${planned.targetRepsLow} ${measure}) and build again.`,
       }
     }
-    return { action: 'hold', message: 'Steady effort. Repeat the same target next time.' }
+    return { action: 'hold', measure, message: 'Steady effort. Repeat the same target next time.' }
   }
 
   const baseInUnit = Math.round(kgToUnit(base, unit) / fineStep(unit)) * fineStep(unit)
@@ -147,7 +180,7 @@ export function suggestNextLoad(
     return {
       action: 'increase',
       suggestedWeightKg: next,
-      message: `Every set reached ${planned.targetRepsHigh} reps${
+      message: `Every set reached ${planned.targetRepsHigh} ${measure}${
         lowEffort ? ' at an easy effort' : ''
       }, so add ${inc} ${unit}.`,
     }

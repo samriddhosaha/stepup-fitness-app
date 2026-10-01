@@ -1,21 +1,58 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../components/ui'
 import { NumberField, TextArea } from '../../components/forms'
-import { RPE_LABELS, type SetFormValues } from './constants'
-import type { WeightUnit } from '../../db/types'
+import { RPE_LABELS } from './constants'
+import { distanceUnitFor, type FieldErrors, type SetFormValues } from './setValues'
+import type { TrackingType, WeightUnit } from '../../db/types'
+
+/** A stopwatch that drops its reading into the seconds field when stopped. */
+function Stopwatch({ onStop }: { onStop: (seconds: number) => void }) {
+  const [startedAt, setStartedAt] = useState<number | null>(null)
+  const [now, setNow] = useState(0)
+  const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+
+  useEffect(() => () => clearInterval(timer.current), [])
+
+  function start() {
+    const t = Date.now()
+    setStartedAt(t)
+    setNow(t)
+    timer.current = setInterval(() => setNow(Date.now()), 250)
+  }
+  function stop() {
+    clearInterval(timer.current)
+    if (startedAt !== null) onStop(Math.max(1, Math.round((Date.now() - startedAt) / 1000)))
+    setStartedAt(null)
+  }
+  const elapsed = startedAt === null ? 0 : Math.floor((now - startedAt) / 1000)
+
+  return (
+    <div className="flex items-center gap-3 mt-2">
+      <Button variant="secondary" className="min-h-11" onClick={startedAt === null ? start : stop}>
+        {startedAt === null ? 'Start timer' : 'Stop and use this time'}
+      </Button>
+      {startedAt !== null && (
+        <span role="timer" aria-label="Stopwatch" className="font-mono text-lg">
+          {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')}
+        </span>
+      )}
+    </div>
+  )
+}
 
 /**
- * Weight / reps / effort for one set. Weight and reps have +/- steppers, effort uses plain
- * words, and an optional note stays tucked away until asked for.
+ * Entry for one set. The fields follow the exercise: weight and reps, reps only, a timed hold
+ * (with a stopwatch), or minutes and distance. Effort and a note are shared.
  */
 export function SetForm({
+  tracking,
   unit,
+  showWeight,
   values,
   onChange,
+  errors,
   weightStep,
   weightRange,
-  weightError,
-  repsError,
   canSubmit,
   submitLabel,
   hint,
@@ -23,13 +60,14 @@ export function SetForm({
   onCancel,
   onSameAsLast,
 }: {
+  tracking: TrackingType
   unit: WeightUnit
+  showWeight: boolean
   values: SetFormValues
   onChange: (patch: Partial<SetFormValues>) => void
+  errors: FieldErrors
   weightStep: number
   weightRange: { min: number; max: number }
-  weightError: string | null
-  repsError: string | null
   canSubmit: boolean
   submitLabel: string
   hint?: string
@@ -39,6 +77,20 @@ export function SetForm({
 }) {
   const [noteOpen, setNoteOpen] = useState(false)
   const showNote = noteOpen || values.note !== ''
+
+  const weightField = (
+    <NumberField
+      label={tracking === 'duration' ? `Weight (${unit}, optional)` : `Weight (${unit})`}
+      value={values.weight}
+      onChange={(weight) => onChange({ weight })}
+      error={errors.weight}
+      min={weightRange.min}
+      max={weightRange.max}
+      step={weightStep}
+      stepper
+      centered
+    />
+  )
 
   return (
     <form
@@ -50,29 +102,43 @@ export function SetForm({
       className="mb-4"
     >
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <NumberField
-          label={`Weight (${unit})`}
-          value={values.weight}
-          onChange={(weight) => onChange({ weight })}
-          error={weightError}
-          min={weightRange.min}
-          max={weightRange.max}
-          step={weightStep}
-          stepper
-          centered
-        />
-        <NumberField
-          label="Reps"
-          inputMode="numeric"
-          value={values.reps}
-          onChange={(reps) => onChange({ reps })}
-          error={repsError}
-          min={1}
-          max={100}
-          step={1}
-          stepper
-          centered
-        />
+        {tracking === 'weight-reps' && (
+          <>
+            {weightField}
+            <NumberField label="Reps" inputMode="numeric" value={values.reps} onChange={(reps) => onChange({ reps })} error={errors.reps} min={1} max={100} step={1} stepper centered />
+          </>
+        )}
+        {tracking === 'bodyweight-reps' && (
+          <div className="col-span-2">
+            <NumberField label="Reps" inputMode="numeric" value={values.reps} onChange={(reps) => onChange({ reps })} error={errors.reps} min={1} max={100} step={1} stepper centered />
+          </div>
+        )}
+        {tracking === 'duration' && (
+          <>
+            {showWeight ? weightField : null}
+            <div className={showWeight ? '' : 'col-span-2'}>
+              <NumberField label="Seconds" inputMode="numeric" value={values.seconds} onChange={(seconds) => onChange({ seconds })} error={errors.seconds} min={1} step={5} stepper centered />
+            </div>
+            <div className="col-span-2 -mt-2">
+              <Stopwatch onStop={(s) => onChange({ seconds: String(s) })} />
+            </div>
+          </>
+        )}
+        {tracking === 'distance-time' && (
+          <>
+            <NumberField label="Minutes" inputMode="decimal" value={values.minutes} onChange={(minutes) => onChange({ minutes })} error={errors.minutes} min={1} step={1} stepper centered />
+            <NumberField
+              label={`Distance (${distanceUnitFor(unit)}, optional)`}
+              value={values.distance}
+              onChange={(distance) => onChange({ distance })}
+              error={errors.distance}
+              min={0}
+              step={0.5}
+              stepper
+              centered
+            />
+          </>
+        )}
       </div>
 
       <fieldset className="mb-4 min-w-0">
@@ -103,13 +169,7 @@ export function SetForm({
 
       {showNote ? (
         <div className="mb-4">
-          <TextArea
-            label="Note"
-            value={values.note}
-            onChange={(e) => onChange({ note: e.target.value })}
-            maxLength={300}
-            className="min-h-16"
-          />
+          <TextArea label="Note" value={values.note} onChange={(e) => onChange({ note: e.target.value })} maxLength={300} className="min-h-16" />
         </div>
       ) : (
         <button type="button" className="text-sm font-semibold text-accent min-h-11 mb-2" onClick={() => setNoteOpen(true)}>

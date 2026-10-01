@@ -1,16 +1,18 @@
-import { formatWeight } from '../../lib/units'
 import { RPE_LABELS } from './constants'
-import type { LoggedSet, WeightUnit } from '../../db/types'
+import { describeSet } from './setValues'
+import type { LoggedSet, TrackingType, WeightUnit } from '../../db/types'
 
 export function LoggedSets({
   sets,
   unit,
+  tracking,
   editingIndex,
   onEdit,
   onDelete,
 }: {
   sets: LoggedSet[]
   unit: WeightUnit
+  tracking?: TrackingType
   editingIndex: number | null
   onEdit: (index: number) => void
   onDelete: (index: number) => void
@@ -30,8 +32,7 @@ export function LoggedSets({
             <span>
               <span className="font-semibold">Set {i + 1}</span>
               {' · '}
-              {s.weightKg ? `${formatWeight(s.weightKg, unit)} × ` : ''}
-              {s.reps ?? s.durationSeconds} {s.reps ? 'reps' : 's'}
+              {describeSet(s, unit, tracking)}
               {s.rpe ? ` · ${RPE_LABELS[s.rpe - 1]}` : ''}
               {s.note ? <span className="block text-xs text-faint">{s.note}</span> : null}
             </span>

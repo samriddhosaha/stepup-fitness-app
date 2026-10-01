@@ -18,9 +18,16 @@ export function bestCandidate(ex: LoggedExercise): Candidate | undefined {
   let e1rm: Candidate | undefined
   let heaviest: Candidate | undefined
   let mostReps: Candidate | undefined
+  let longest: Candidate | undefined
   for (const set of ex.sets) {
     const reps = set.reps ?? 0
-    if (reps <= 0) continue
+    if (reps <= 0) {
+      // timed holds: the longest single set is the record (cardio sessions with a distance aren't ranked)
+      if ((set.durationSeconds ?? 0) > 0 && !set.distanceM && (!longest || set.durationSeconds! > longest.value)) {
+        longest = { kind: 'time', value: set.durationSeconds!, reps: 0 }
+      }
+      continue
+    }
     if (set.weightKg && set.weightKg > 0) {
       const est = estimatedOneRepMax(set.weightKg, reps)
       if (est !== undefined && (!e1rm || est > e1rm.value)) e1rm = { kind: 'e1rm', value: est, reps }
@@ -29,7 +36,7 @@ export function bestCandidate(ex: LoggedExercise): Candidate | undefined {
       mostReps = { kind: 'reps', value: reps, reps }
     }
   }
-  const best = e1rm ?? heaviest ?? mostReps
+  const best = e1rm ?? heaviest ?? mostReps ?? longest
   return best && { ...best, value: Math.round(best.value * 10) / 10 }
 }
 

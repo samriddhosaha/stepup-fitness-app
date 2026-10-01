@@ -17,10 +17,10 @@ import {
   swapExercise,
   updateSet,
 } from '../lib/workout'
-import { loadStepFor, suggestNextLoad, warmupSets } from '../lib/overload'
-import { estimateStartingLoadKg } from '../lib/plan'
+import { measureFor, loadStepFor, suggestNextLoad, warmupSets } from '../lib/overload'
+import { estimateCalibrationHintKg } from '../lib/plan'
+import { avoidExercise } from '../lib/planEdit'
 import { track } from '../lib/analytics'
-import { REPS_RANGE, rangeErrorMessage } from '../lib/validation'
 import { formatWeight, parseWeight, workoutLoadRangeForUnit } from '../lib/units'
 import { useUnit } from '../lib/useUnit'
 import { useWakeLock } from '../lib/useWakeLock'
@@ -30,22 +30,28 @@ import { useToast } from '../components/toastContext'
 import { SetForm } from '../features/workout/SetForm'
 import { LoggedSets } from '../features/workout/LoggedSets'
 import { WorkoutDialogs } from '../features/workout/WorkoutDialogs'
-import { summariseSets, type SetFormValues, type WorkoutPanel } from '../features/workout/constants'
-import type { LoggedSet, PlanExercise, Profile, SkipReason, WorkoutSession } from '../db/types'
+import { type WorkoutPanel } from '../features/workout/constants'
+import {
+  EMPTY_FORM,
+  setFromValues,
+  summariseSets,
+  targetLabel,
+  validateValues,
+  valuesFromSet,
+  type SetFormValues,
+} from '../features/workout/setValues'
+import type { LoggedSet, PlanExercise, SkipReason, WorkoutSession } from '../db/types'
 
 const DEFAULT_REST_SECONDS = 90
-const EMPTY_FORM: SetFormValues = { weight: '', reps: '', rpe: null, note: '' }
+/** Rests this short (mobility holds) don't warrant a countdown. */
+const MIN_REST_TO_SHOW = 20
 
-/** The planned slot for the exercise at the current position; swapped-in exercises get their own load estimate. */
-function plannedFor(session: WorkoutSession, exerciseId: string, profile: Profile | undefined): PlanExercise | undefined {
+/** The planned slot for the exercise at the current position (a swapped-in exercise inherits the slot's targets). */
+function plannedFor(session: WorkoutSession, exerciseId: string): PlanExercise | undefined {
   const originalId = session.swapMap?.[exerciseId] ?? exerciseId
   const original = session.plannedSnapshot?.find((p) => p.exerciseId === originalId)
   if (!original || originalId === exerciseId) return original
-  return {
-    ...original,
-    exerciseId,
-    startingLoadKg: profile ? estimateStartingLoadKg(exerciseId, profile) : undefined,
-  }
+  return { ...original, exerciseId, startingLoadKg: undefined }
 }
 
 export default function WorkoutActive() {
@@ -61,9 +67,11 @@ export default function WorkoutActive() {
   const [editing, setEditing] = useState<number | null>(null)
   const [panel, setPanel] = useState<WorkoutPanel>(null)
   const [suggestionMessage, setSuggestionMessage] = useState<string | undefined>()
-  const [repTarget, setRepTarget] = useState<number | undefined>()
+  const [target, setTarget] = useState<{ value: number; measure: string } | undefined>()
+  const [calibration, setCalibration] = useState<{ hintKg?: number } | undefined>()
   const [lastTime, setLastTime] = useState<LoggedSet[] | undefined>()
   const [announce, setAnnounce] = useState('')
+  const [painFor, setPainFor] = useState<string | null>(null)
   const logging = useRef(false)
   // Set while finishing: once the session closes the live query goes null, and we must head to the summary, not the dashboard.
   const [finishingId, setFinishingId] = useState<number | null>(null)
@@ -74,8 +82,9 @@ export default function WorkoutActive() {
   const index = session ? Math.min(session.currentIndex ?? 0, (order?.length ?? 1) - 1) : 0
   const currentExerciseId = order?.[index]
   const currentExercise = currentExerciseId ? getExerciseById(currentExerciseId) : undefined
-  const plannedExercise = session && currentExerciseId ? plannedFor(session, currentExerciseId, profile ?? undefined) : undefined
+  const plannedExercise = session && currentExerciseId ? plannedFor(session, currentExerciseId) : undefined
   const sessionId = session?.id
+  const tracking = currentExercise?.trackingType ?? 'weight-reps'
   const patch = (p: Partial<SetFormValues>) => setForm((f) => ({ ...f, ...p }))
 
   // Prefill from what the lifter actually did last time (exerciseState), not the plan.
@@ -83,7 +92,8 @@ export default function WorkoutActive() {
     setForm(EMPTY_FORM)
     setEditing(null)
     setSuggestionMessage(undefined)
-    setRepTarget(undefined)
+    setTarget(undefined)
+    setCalibration(undefined)
     setLastTime(undefined)
     if (!currentExerciseId || !plannedExercise) return
     let cancelled = false
@@ -93,11 +103,16 @@ export default function WorkoutActive() {
         mostRecentLoggedSets(currentExerciseId, sessionId),
       ])
       if (cancelled) return
-      const s = suggestNextLoad(plannedExercise, [], state, { unit })
-      if (state) setSuggestionMessage(s.message)
-      const kg = s.suggestedWeightKg ?? plannedExercise.startingLoadKg
-      if (kg) patch({ weight: formatWeight(kg, unit, false) })
-      setRepTarget(s.suggestedReps)
+      const trackingType = getExerciseById(currentExerciseId)?.trackingType
+      const s = suggestNextLoad(plannedExercise, [], state, { unit, tracking: trackingType })
+      if (s.needsCalibration) {
+        setCalibration({ hintKg: profile ? estimateCalibrationHintKg(currentExerciseId, profile) : undefined })
+      } else {
+        if (state) setSuggestionMessage(s.message)
+        const kg = s.suggestedWeightKg ?? plannedExercise.startingLoadKg
+        if (kg) patch({ weight: formatWeight(kg, unit, false) })
+      }
+      if (s.suggestedReps) setTarget({ value: s.suggestedReps, measure: s.measure ?? measureFor(trackingType) })
       setLastTime(prev)
     })()
     return () => {
@@ -146,45 +161,44 @@ export default function WorkoutActive() {
   const isLastExercise = index === order.length - 1
   const allSetsDone = setsLogged >= targetSets
 
+  // timed holds can carry a load (carries); reps-based lifts always have weight, bodyweight moves never
+  const showWeight = tracking === 'weight-reps' || (tracking === 'duration' && currentExercise.kit === 'dumbbell')
   const loadRange = workoutLoadRangeForUnit(unit)
-  const weightError = rangeErrorMessage(form.weight, loadRange, unit)
-  const repsError = rangeErrorMessage(form.reps, REPS_RANGE, 'reps')
-  const repsMissing = form.reps.trim() === ''
-  const canSubmit = !weightError && !repsError && !repsMissing
+  const validation = validateValues(form, tracking, unit, showWeight)
   const workingKg = parseWeight(form.weight, unit) ?? undefined
   const weightStep = loadStepFor(currentExerciseId, workingKg, unit)
-  const warmups = setsLogged === 0 ? warmupSets(currentExercise.warmupRamp, workingKg, unit) : []
-  const substitutes = profile ? getSubstitutes(currentExercise, profile.equipment) : []
+  const warmups = setsLogged === 0 && tracking === 'weight-reps' ? warmupSets(currentExercise.warmupRamp, workingKg, unit) : []
+  const rest = plannedExercise?.restSeconds ?? DEFAULT_REST_SECONDS
   const resting = activeSession.restEndsAt !== undefined
   const lastSet = loggedSets[loggedSets.length - 1]
+  const substitutes = profile ? getSubstitutes(currentExercise, profile.equipment).filter((s) => !profile.avoidedExerciseIds?.includes(s.id)) : []
 
-  const formToSet = (setIndex: number): LoggedSet => ({
-    setIndex,
-    weightKg: parseWeight(form.weight, unit) ?? undefined,
-    reps: Number(form.reps),
-    rpe: form.rpe ?? undefined,
-    note: form.note.trim() || undefined,
-  })
+  const painExercise = painFor ? getExerciseById(painFor) : undefined
+  const painReplacement = painExercise && profile ? getSubstitutes(painExercise, profile.equipment).find((s) => !profile.avoidedExerciseIds?.includes(s.id)) : undefined
 
   async function handleSubmit() {
-    if (!canSubmit || logging.current) return
+    if (!validation.canSubmit || logging.current) return
     logging.current = true
     try {
       if (editing !== null) {
-        const { setIndex: _ignored, ...changes } = formToSet(editing)
+        const next = setFromValues(form, tracking, unit, editing, showWeight)
+        if (!next) return
+        const { setIndex: _ignored, ...changes } = next
         void _ignored
         if (await updateSet(sid, currentExerciseId!, editing, changes)) {
           setAnnounce(`Set ${editing + 1} updated`)
           setEditing(null)
-          patch({ reps: '', rpe: null, note: '' })
+          patch({ reps: '', seconds: '', minutes: '', distance: '', rpe: null, note: '' })
         }
         return
       }
-      const result = await logSet(sid, currentExerciseId!, formToSet(setsLogged), activeSession.swapMap?.[currentExerciseId!])
+      const next = setFromValues(form, tracking, unit, setsLogged, showWeight)
+      if (!next) return
+      const result = await logSet(sid, currentExerciseId!, next, activeSession.swapMap?.[currentExerciseId!])
       if (result.ok) {
         setAnnounce(`Set ${setsLogged + 1} logged`)
-        await setRestEndsAt(sid, Date.now() + DEFAULT_REST_SECONDS * 1000)
-        patch({ reps: '', rpe: null, note: '' })
+        if (rest >= MIN_REST_TO_SHOW) await setRestEndsAt(sid, Date.now() + rest * 1000)
+        patch({ reps: '', seconds: '', minutes: '', distance: '', rpe: null, note: '' })
       }
     } finally {
       logging.current = false
@@ -195,12 +209,7 @@ export default function WorkoutActive() {
     const s = loggedSets[i]
     if (!s) return
     setEditing(i)
-    setForm({
-      weight: s.weightKg ? formatWeight(s.weightKg, unit, false) : '',
-      reps: String(s.reps ?? ''),
-      rpe: s.rpe ?? null,
-      note: s.note ?? '',
-    })
+    setForm(valuesFromSet(s, unit))
   }
 
   async function handleDelete(i: number) {
@@ -217,11 +226,8 @@ export default function WorkoutActive() {
 
   function sameAsLast() {
     if (!lastSet) return
-    patch({
-      weight: lastSet.weightKg ? formatWeight(lastSet.weightKg, unit, false) : '',
-      reps: String(lastSet.reps ?? ''),
-      rpe: lastSet.rpe ?? null,
-    })
+    const v = valuesFromSet(lastSet, unit)
+    patch({ weight: v.weight, reps: v.reps, seconds: v.seconds, minutes: v.minutes, distance: v.distance, rpe: v.rpe })
   }
 
   async function goToExercise(next: number) {
@@ -242,7 +248,7 @@ export default function WorkoutActive() {
     navigate('/workout/complete', { state: { sessionId: sid } })
   }
 
-  async function goNextExercise() {
+  async function advance() {
     if (isLastExercise) await handleFinish(false)
     else await goToExercise(index + 1)
   }
@@ -255,9 +261,28 @@ export default function WorkoutActive() {
   async function handleSkip(reason: SkipReason) {
     await recordSkip(sid, { exerciseId: currentExerciseId!, reason })
     await track('exercise_skipped', { exerciseId: currentExerciseId, reason })
+    if (reason === 'discomfort-or-pain') {
+      // don't just move on: offer to stop suggesting it
+      setPainFor(currentExerciseId!)
+      setPanel('pain')
+      return
+    }
     setPanel(null)
-    if (isLastExercise) await handleFinish(false)
-    else await goToExercise(index + 1)
+    await advance()
+  }
+
+  async function finishPainFlow(action: 'replace' | 'remove' | 'dismiss') {
+    const id = painFor
+    setPainFor(null)
+    setPanel(null)
+    if (id && action === 'replace' && painReplacement) {
+      await avoidExercise(id, { replaceWith: painReplacement.id })
+      toast(`${getExerciseById(id)?.name} won’t be suggested again.`)
+    } else if (id && action === 'remove') {
+      await avoidExercise(id, { removeFromPlan: true })
+      toast(`${getExerciseById(id)?.name} won’t be suggested again.`)
+    }
+    await advance()
   }
 
   async function handleDiscard() {
@@ -267,6 +292,9 @@ export default function WorkoutActive() {
     navigate('/dashboard')
   }
 
+  const submitLabel = editing !== null ? `Save set ${editing + 1}` : allSetsDone ? 'Add another set' : 'Complete set'
+  const needHint = validation.missing && !allSetsDone ? `Enter your ${validation.missing} to log this set.` : undefined
+
   return (
     <div className="flex-1 flex flex-col">
       <div className="flex items-center justify-between mb-4">
@@ -275,6 +303,7 @@ export default function WorkoutActive() {
         </button>
         <p className="label-eyebrow text-faint">
           Exercise {index + 1} / {order.length}
+          {plannedExercise?.block && plannedExercise.block !== 'main' ? ` · ${plannedExercise.block}` : ''}
         </p>
         <button
           className="text-sm font-semibold text-accent min-h-12 px-2"
@@ -286,16 +315,34 @@ export default function WorkoutActive() {
 
       <h1 className="font-display font-semibold text-2xl md:text-3xl mb-1">{currentExercise.name}</h1>
       <p className="text-sm text-faint mb-1">
-        {setsLogged} of {targetSets} sets · target {plannedExercise?.targetRepsLow}-{plannedExercise?.targetRepsHigh} reps
+        {setsLogged} of {targetSets} sets · target{' '}
+        {plannedExercise ? targetLabel(plannedExercise.targetRepsLow, plannedExercise.targetRepsHigh, tracking) : ''}
       </p>
       {lastTime && lastTime.length > 0 && (
         <p className="text-sm mb-4">
-          <span className="text-faint">Last time:</span> {summariseSets(lastTime, unit)}
+          <span className="text-faint">Last time:</span> {summariseSets(lastTime, unit, tracking)}
         </p>
       )}
       <p className="sr-only" role="status" aria-live="polite">
         {announce}
       </p>
+
+      {calibration && setsLogged === 0 && (
+        <Card className="mb-4 bg-accent-soft">
+          <p className="label-eyebrow mb-1">First time with this one</p>
+          <p className="text-sm mb-2">
+            Pick a weight you could lift about 10 times with good form, then log your sets. StepUp takes it from there.
+          </p>
+          {calibration.hintKg ? (
+            <>
+              <p className="text-xs text-faint mb-2">Many people start around {formatWeight(calibration.hintKg, unit)}. Lighter is always fine.</p>
+              <Button variant="secondary" className="min-h-11" onClick={() => patch({ weight: formatWeight(calibration.hintKg!, unit, false) })}>
+                Use {formatWeight(calibration.hintKg, unit)}
+              </Button>
+            </>
+          ) : null}
+        </Card>
+      )}
 
       {warmups.length > 0 && (
         <Card className="mb-4 bg-accent-soft">
@@ -317,7 +364,11 @@ export default function WorkoutActive() {
       </ul>
 
       {suggestionMessage && setsLogged === 0 && <p className="text-sm text-accent mb-4">{suggestionMessage}</p>}
-      {repTarget && setsLogged === 0 && <p className="text-sm text-accent mb-4">Aim for {repTarget} reps.</p>}
+      {target && setsLogged === 0 && (
+        <p className="text-sm text-accent mb-4">
+          Aim for {target.value} {target.measure}.
+        </p>
+      )}
 
       <div className="flex gap-3 mb-4">
         <Button variant="ghost" className="flex-1" onClick={() => setPanel('swap')}>
@@ -328,21 +379,29 @@ export default function WorkoutActive() {
         </Button>
       </div>
 
-      <LoggedSets sets={loggedSets} unit={unit} editingIndex={editing} onEdit={startEdit} onDelete={handleDelete} />
+      <LoggedSets sets={loggedSets} unit={unit} tracking={tracking} editingIndex={editing} onEdit={startEdit} onDelete={handleDelete} />
 
       <SetForm
+        tracking={tracking}
         unit={unit}
+        showWeight={showWeight}
         values={form}
         onChange={patch}
+        errors={validation.errors}
         weightStep={weightStep}
         weightRange={loadRange}
-        weightError={weightError}
-        repsError={repsError}
-        canSubmit={canSubmit}
-        submitLabel={editing !== null ? `Save set ${editing + 1}` : allSetsDone ? 'Add another set' : 'Complete set'}
-        hint={repsMissing ? 'Enter your reps to log this set.' : undefined}
+        canSubmit={validation.canSubmit}
+        submitLabel={submitLabel}
+        hint={needHint}
         onSubmit={handleSubmit}
-        onCancel={editing !== null ? () => { setEditing(null); patch({ reps: '', rpe: null, note: '' }) } : undefined}
+        onCancel={
+          editing !== null
+            ? () => {
+                setEditing(null)
+                patch({ reps: '', seconds: '', minutes: '', distance: '', rpe: null, note: '' })
+              }
+            : undefined
+        }
         onSameAsLast={editing === null && lastSet ? sameAsLast : undefined}
       />
 
@@ -357,14 +416,14 @@ export default function WorkoutActive() {
       )}
 
       {setsLogged > 0 && (
-        <Button variant={allSetsDone ? 'primary' : 'secondary'} className="w-full" onClick={goNextExercise}>
+        <Button variant={allSetsDone ? 'primary' : 'secondary'} className="w-full" onClick={advance}>
           {isLastExercise ? 'Finish workout' : allSetsDone ? 'Next exercise' : 'Done with this exercise'}
         </Button>
       )}
 
       <WorkoutDialogs
         panel={panel}
-        close={() => setPanel(null)}
+        close={() => (panel === 'pain' ? void finishPainFlow('dismiss') : setPanel(null))}
         substitutes={substitutes}
         totalLogged={totalLogged}
         onSwap={handleSwap}
@@ -372,6 +431,11 @@ export default function WorkoutActive() {
         onSaveAndExit={() => navigate('/dashboard')}
         onDiscard={handleDiscard}
         onFinish={() => handleFinish(true)}
+        painExerciseName={painExercise?.name}
+        painReplacement={painReplacement}
+        onPainReplace={() => void finishPainFlow('replace')}
+        onPainRemove={() => void finishPainFlow('remove')}
+        onPainDismiss={() => void finishPainFlow('dismiss')}
       />
     </div>
   )
