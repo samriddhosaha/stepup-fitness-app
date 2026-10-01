@@ -1,133 +1,143 @@
-import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, getActivePlan } from '../db/schema'
+import { useState } from 'react'
+import { db, getActivePlan, setSetting } from '../db/schema'
+import { useProfile } from '../db/repo'
 import { getExerciseById } from '../db/exerciseLibrary'
-import { findTodaysSession, startSession } from '../lib/workout'
-import { computeStreak } from '../lib/streak'
-import { generateWeeklyRecap } from '../lib/recap'
-import { buildWeeklyReviewPayload, requestAIWeeklyReview } from '../lib/aiCoach'
-import { track } from '../lib/analytics'
-import { greetingForNow, startOfWeekISO } from '../lib/format'
-import { Button, Card, WeekDots } from '../components/ui'
+import { discardSession, findTodaysSession, getInProgressSession, todayWeekdayIndex } from '../lib/workout'
+import { activeWeeksInARow, completedThisWeek } from '../lib/consistency'
+import { deloadDue, estimateSessionMinutes } from '../lib/plan'
+import { isRealPR } from '../lib/records'
+import { greetingForNow, todayISODate } from '../lib/format'
+import { Button, Card, PageSkeleton, WeekDots } from '../components/ui'
+import { WeeklyReviewCard } from '../components/WeeklyReviewCard'
+import { useStartWorkout } from '../components/StartWorkout'
+import type { PlanSession } from '../db/types'
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+
+/** The next scheduled session after today (wrapping into next week), for a preview. */
+function nextSessionAfterToday(sessions: PlanSession[], todayIndex: number): PlanSession | undefined {
+  return [...sessions]
+    .sort((a, b) => ((a.dayIndex - todayIndex + 6) % 7) - ((b.dayIndex - todayIndex + 6) % 7))
+    .find((s) => s.dayIndex !== todayIndex)
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const profile = useLiveQuery(() => db.profile.orderBy('createdAt').last())
+  const { begin, dialog } = useStartWorkout()
+  const profile = useProfile()
   const plan = useLiveQuery(getActivePlan)
   const sessions = useLiveQuery(() => db.workoutSessions.toArray())
+  const inProgress = useLiveQuery(async () => (await getInProgressSession()) ?? null)
+  const deloadAckAt = useLiveQuery(async () => ((await db.settings.get('deloadAckAt'))?.value as number | undefined) ?? null, [])
+  const [loadedAt] = useState(() => Date.now())
   const recentPR = useLiveQuery(async () => {
-    const rows = await db.personalRecords
-      .filter((r) => r.achievedAt >= Date.now() - 7 * 24 * 60 * 60 * 1000)
-      .toArray()
+    const rows = await db.personalRecords.filter((r) => isRealPR(r) && r.achievedAt >= Date.now() - WEEK_MS).toArray()
     return rows.sort((a, b) => a.achievedAt - b.achievedAt)
   })
-  const [recap, setRecap] = useState<string | null>(null)
-  const [recapIsFallback, setRecapIsFallback] = useState(false)
-  const aiCoachEnabled = Boolean(profile?.aiCoachEnabled)
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadRecap() {
-      if (aiCoachEnabled) {
-        try {
-          const payload = await buildWeeklyReviewPayload()
-          const review = await requestAIWeeklyReview(payload)
-          if (!cancelled) {
-            setRecap(review)
-            setRecapIsFallback(false)
-          }
-          return
-        } catch {
-          // Falls through to the rules-based recap below — network issues,
-          // a missing/invalid key, or rate limits should never leave the
-          // user with no recap at all.
-        }
-      }
-      const ruleBased = await generateWeeklyRecap()
-      if (!cancelled) {
-        setRecap(ruleBased)
-        setRecapIsFallback(aiCoachEnabled)
-      }
-    }
-
-    loadRecap()
-    return () => {
-      cancelled = true
-    }
-  }, [sessions, aiCoachEnabled])
-
-  if (!plan || !sessions) return null
+  if (!plan || !sessions || inProgress === undefined) return <PageSkeleton label="Loading your dashboard" />
 
   const activePlan = plan
+  const today = todayISODate()
   const todays = findTodaysSession(activePlan.sessions)
-  const streak = computeStreak(activePlan, sessions)
-  const doneThisWeek = sessions.filter(
-    (s) => s.completedAt && s.date >= startOfWeekISO(),
-  ).length
+  const todayDone = Boolean(todays && sessions.some((s) => s.completedAt && s.date === today && s.planSessionName === todays.name))
+  const weeksInARow = activeWeeksInARow(sessions, today)
+  const doneThisWeek = completedThisWeek(sessions, today)
   const latestPR = recentPR?.[recentPR.length - 1]
-
-  async function begin() {
-    const target = todays ?? activePlan.sessions[0]
-    await startSession(target)
-    await track('workout_started', { session: target.name })
-    navigate('/workout/active')
-  }
+  const completedSincePlan = sessions.filter((s) => s.completedAt && s.completedAt >= Math.max(activePlan.createdAt, deloadAckAt ?? 0)).length
+  const easyWeek = deloadAckAt !== undefined && deloadDue(activePlan.createdAt, completedSincePlan, loadedAt, deloadAckAt ?? undefined)
+  const upNext = todays ? undefined : nextSessionAfterToday(activePlan.sessions, todayWeekdayIndex())
 
   return (
     <div>
+      <h1 className="sr-only">Home</h1>
       <p className="text-sm text-faint mb-6">
         {greetingForNow()}
         {profile?.name ? `, ${profile.name}` : ''}
       </p>
 
+      {dialog}
+
+      {inProgress && (
+        <Card className="mb-6 bg-accent-soft">
+          <p className="label-eyebrow text-faint mb-1">In progress</p>
+          <p className="font-display font-semibold text-xl mb-3">{inProgress.planSessionName}</p>
+          <div className="flex gap-3 flex-wrap">
+            <Button onClick={() => navigate('/workout/active')}>Resume workout</Button>
+            <Button variant="ghost" onClick={() => discardSession(inProgress.id!)}>
+              Discard
+            </Button>
+          </div>
+        </Card>
+      )}
+
       <div className="md:grid md:grid-cols-3 md:gap-8 space-y-6 md:space-y-0">
         {/* Main column */}
         <div className="md:col-span-2 space-y-6">
           <Card>
-            {todays ? (
+            {todays && !todayDone ? (
               <>
-                <p className="font-display font-bold text-2xl mb-1">{todays.name}</p>
-                <p className="text-sm text-faint mb-4">Nothing to prove today. Just begin.</p>
-                <Button className="w-full md:w-auto" onClick={begin}>
+                <p className="font-display font-semibold text-2xl mb-1">{todays.name}</p>
+                <p className="text-sm text-faint mb-1">Nothing to prove today. Just begin.</p>
+                <p className="text-xs text-faint mb-4">
+                  {todays.exercises.length} exercises · about {estimateSessionMinutes(todays)} min
+                </p>
+                <Button className="w-full md:w-auto" onClick={() => begin(todays)} disabled={Boolean(inProgress)}>
                   Start workout
+                </Button>
+              </>
+            ) : todays ? (
+              <>
+                <p className="font-display font-semibold text-2xl mb-1">{todays.name} is done.</p>
+                <p className="text-sm text-faint mb-4">That’s today taken care of.</p>
+                <Button variant="secondary" className="w-full md:w-auto" onClick={() => navigate('/workout')}>
+                  Train anyway
                 </Button>
               </>
             ) : (
               <>
-                <p className="font-display font-bold text-2xl mb-1">Nothing scheduled.</p>
+                <p className="font-display font-semibold text-2xl mb-1">Nothing scheduled.</p>
                 <p className="text-sm text-faint mb-4">A rest day.</p>
-                <Button
-                  variant="secondary"
-                  className="w-full md:w-auto"
-                  onClick={() => navigate('/workout')}
-                >
+                {upNext && (
+                  <p className="text-xs text-faint mb-4">
+                    Next up: {upNext.name} · {upNext.exercises.length} exercises · about{' '}
+                    {estimateSessionMinutes(upNext)} min
+                  </p>
+                )}
+                <Button variant="secondary" className="w-full md:w-auto" onClick={() => navigate('/workout')}>
                   Train anyway
                 </Button>
               </>
             )}
           </Card>
 
-          {recap && (
-            <Card>
-              <p className="label-eyebrow text-faint mb-2">This week, in short</p>
-              {recapIsFallback && (
-                <p className="text-xs text-faint mb-2">
-                  AI review unavailable this week — here's your recap instead.
-                </p>
-              )}
-              <p className="text-sm">{recap}</p>
+          {easyWeek && (
+            <Card className="bg-accent-soft">
+              <p className="label-eyebrow text-faint mb-1">A thought for this week</p>
+              <p className="font-semibold mb-1">Time for an easier week?</p>
+              <p className="text-sm mb-3">
+                You’ve trained steadily for about six weeks. Doing roughly a third fewer sets at the same weights lets your body catch up, and you come back stronger.
+              </p>
+              <Button variant="secondary" className="min-h-11" onClick={() => void setSetting('deloadAckAt', Date.now())}>
+                Got it
+              </Button>
             </Card>
           )}
+
+          <WeeklyReviewCard aiEnabled={Boolean(profile?.aiCoachEnabled)} />
         </div>
 
         {/* Side column */}
         <div className="space-y-6">
-          {streak > 0 && (
+          {weeksInARow > 0 && (
             <Card>
-              <p className="label-eyebrow text-faint mb-1">Streak</p>
-              <p className="font-display font-bold text-3xl">{streak}</p>
+              <p className="label-eyebrow text-faint mb-1">Consistency</p>
+              <p className="font-display font-semibold text-3xl">
+                {weeksInARow} {weeksInARow === 1 ? 'week' : 'weeks'}
+              </p>
+              <p className="text-xs text-faint mt-1">of showing up. One quiet week never counts against you.</p>
             </Card>
           )}
 
@@ -139,18 +149,18 @@ export default function Dashboard() {
           {latestPR && (
             <Card className="bg-accent-soft">
               <p className="label-eyebrow text-faint mb-1">New personal best</p>
-              <p className="text-sm font-bold">{getExerciseById(latestPR.exerciseId)?.name}</p>
+              <p className="text-sm font-semibold">{getExerciseById(latestPR.exerciseId)?.name}</p>
             </Card>
           )}
 
           <div className="flex flex-col gap-2 pt-2">
-            <Link to="/progress/xp" className="text-sm font-bold text-accent">
+            <Link to="/progress/xp" className="text-sm font-semibold text-accent">
               XP & level →
             </Link>
-            <Link to="/history" className="text-sm font-bold text-accent">
+            <Link to="/history" className="text-sm font-semibold text-accent">
               Full history →
             </Link>
-            <Link to="/guide" className="text-sm font-bold text-accent">
+            <Link to="/guide" className="text-sm font-semibold text-accent">
               How StepUp works →
             </Link>
           </div>

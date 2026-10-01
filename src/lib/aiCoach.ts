@@ -1,35 +1,14 @@
-import { db, getActivePlan } from '../db/schema'
-import { getExerciseById } from '../db/exerciseLibrary'
-import { daysAgoISO } from './format'
-import { computeStreak } from './streak'
+import { db, getActivePlan, getInstallToken } from '../db/schema'
+import { daysAgoISO, parseISODateLocal, todayISODate } from './format'
+import { isBuiltInExercise } from '../db/exerciseLibrary'
+import { activeWeeksInARow } from './consistency'
+import { isRealPR } from './records'
+import { SKIP_REASONS } from '../../shared/skipReasons'
+import type { WeeklyReviewPayload } from '../../shared/weeklyReviewSchema'
 
-export interface WeeklyReviewExerciseSummary {
-  exerciseName: string
-  totalSets: number
-  avgRpe: number | null
-  metTargetRange: boolean
-}
+export type { WeeklyReviewPayload }
 
-export interface WeeklyReviewSkipSummary {
-  exerciseName: string
-  reason: string
-  count: number
-}
-
-export interface WeeklyReviewPRSummary {
-  exerciseName: string
-  value: number
-}
-
-export interface WeeklyReviewPayload {
-  sessionsCompleted: number
-  sessionsPlanned: number
-  exercises: WeeklyReviewExerciseSummary[]
-  skips: WeeklyReviewSkipSummary[]
-  prs: WeeklyReviewPRSummary[]
-  streak: number
-  bodyWeightTrendKg: { start: number; end: number } | null
-}
+const KNOWN_REASONS = new Set<string>(SKIP_REASONS)
 
 /**
  * Builds exactly the payload the opt-in AI weekly coach sends off-device —
@@ -59,13 +38,14 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
     }
   }
 
-  const exercises: WeeklyReviewExerciseSummary[] = Array.from(exerciseMap.entries()).map(
+  // the AI server only knows built-in exercises; the person's own stay on the device
+  const exercises: WeeklyReviewPayload['exercises'] = Array.from(exerciseMap.entries()).filter(([id]) => isBuiltInExercise(id)).map(
     ([exerciseId, data]) => {
       const rpes = data.sets.map((s) => s.rpe).filter((r): r is number => typeof r === 'number')
       const avgReps =
         data.sets.reduce((sum, s) => sum + (s.reps ?? 0), 0) / Math.max(data.sets.length, 1)
       return {
-        exerciseName: getExerciseById(exerciseId)?.name ?? exerciseId,
+        exerciseId,
         totalSets: data.sets.length,
         avgRpe: rpes.length ? Math.round((rpes.reduce((a, b) => a + b, 0) / rpes.length) * 10) / 10 : null,
         metTargetRange: avgReps >= data.high,
@@ -83,28 +63,28 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
       })
     }
   }
-  const skips: WeeklyReviewSkipSummary[] = Array.from(skipCounts.entries()).map(
+  const skips: WeeklyReviewPayload['skips'] = Array.from(skipCounts.entries()).filter(([id]) => isBuiltInExercise(id)).map(
     ([exerciseId, info]) => ({
-      exerciseName: getExerciseById(exerciseId)?.name ?? exerciseId,
-      reason: info.reason,
+      exerciseId,
+      reason: KNOWN_REASONS.has(info.reason) ? (info.reason as WeeklyReviewPayload['skips'][number]['reason']) : 'unspecified',
       count: info.count,
     }),
   )
 
   const recentPRs = await db.personalRecords
-    .filter((r) => r.achievedAt >= Date.parse(weekAgo))
+    .filter((r) => isRealPR(r) && r.achievedAt >= parseISODateLocal(weekAgo).getTime())
     .toArray()
-  const prs: WeeklyReviewPRSummary[] = recentPRs.map((pr) => ({
-    exerciseName: getExerciseById(pr.exerciseId)?.name ?? pr.exerciseId,
+  const prs: WeeklyReviewPayload['prs'] = recentPRs.filter((pr) => isBuiltInExercise(pr.exerciseId) && (pr.kind === undefined || pr.kind === 'e1rm' || pr.kind === 'weight')).map((pr) => ({
+    exerciseId: pr.exerciseId,
     value: pr.value,
   }))
 
   const bodyWeights = await db.progressSnapshots.where('date').aboveOrEqual(weekAgo).toArray()
   const sorted = bodyWeights.sort((a, b) => a.date.localeCompare(b.date))
+  const firstReading = sorted[0]
+  const lastReading = sorted.at(-1)
   const bodyWeightTrendKg =
-    sorted.length >= 2
-      ? { start: sorted[0].bodyWeightKg, end: sorted[sorted.length - 1].bodyWeightKg }
-      : null
+    sorted.length >= 2 && firstReading && lastReading ? { start: firstReading.bodyWeightKg, end: lastReading.bodyWeightKg } : null
 
   return {
     sessionsCompleted: completed.length,
@@ -112,20 +92,25 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
     exercises,
     skips,
     prs,
-    streak: computeStreak(plan, sessions),
+    activeWeeksInARow: activeWeeksInARow(await db.workoutSessions.toArray(), todayISODate()),
     bodyWeightTrendKg,
   }
 }
 
+export const AI_REQUEST_TIMEOUT_MS = 8000
+
 export async function requestAIWeeklyReview(payload: WeeklyReviewPayload): Promise<string> {
   const response = await fetch('/api/weekly-review', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-stepup-install': await getInstallToken() },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
   })
   if (!response.ok) {
     throw new Error(`AI review request failed with status ${response.status}`)
   }
-  const data = (await response.json()) as { review: string }
-  return data.review
+  const data: unknown = await response.json()
+  const review = (data as { review?: unknown } | null)?.review
+  if (typeof review !== 'string' || !review.trim()) throw new Error('AI review response was empty')
+  return review
 }

@@ -14,10 +14,12 @@ export type TrackEventName =
   | 'workout_abandoned'
   | 'exercise_skipped'
   | 'pr_achieved'
-  | 'streak_broken'
   | 'data_exported'
   | 'data_imported'
   | 'delete_all_data_invoked'
+
+/** Local events kept; older ones are pruned. */
+const MAX_EVENTS = 500
 
 export async function track(
   eventName: TrackEventName,
@@ -28,4 +30,7 @@ export async function track(
     propsJson: props ? JSON.stringify(props) : undefined,
     occurredAt: Date.now(),
   })
+  // nothing reads these today; keep only a recent window so the table can't grow forever
+  const extra = (await db.appEvents.count()) - MAX_EVENTS
+  if (extra > 0) await db.appEvents.orderBy('occurredAt').limit(extra).delete()
 }

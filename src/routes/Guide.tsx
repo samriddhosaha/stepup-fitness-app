@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react'
 const SECTIONS = [
   {
     title: 'XP',
-    body: 'You earn XP for logging sets, finishing exercises, completing workouts, and hitting personal records. Skipping an exercise or missing a workout costs a small, capped amount — never enough to wipe out a good week.',
+    body: 'You earn XP for logging sets, finishing exercises, completing workouts, and hitting personal records. Skipping an exercise or missing a workout never costs you XP.',
   },
   {
     title: 'Levels and rank',
@@ -16,11 +16,11 @@ const SECTIONS = [
   },
   {
     title: 'How your plan works',
-    body: 'Your plan is built from what you told us: goal, days available, equipment, and experience. It adjusts your suggested load after every set based on how it actually went, using both what you lifted and how hard it felt.',
+    body: 'Your plan is built from what you told us: goal, the days and time you have, your equipment, your experience, and anything you want to avoid. The first time you do a lift, you choose the weight. After that, StepUp suggests your next weight from what you actually lifted: add a little once every set reaches the top of the rep range at a manageable effort, hold when it was heavy, and ease back after two tough sessions in a row. Goals change the sets, reps and rests. Injuries and exclusions you tell us about are left out, and you can edit, swap or add exercises on the Plan screen whenever you like.',
   },
   {
-    title: 'Streaks',
-    body: 'A streak counts consecutive scheduled workouts completed. Missing one changes nothing. Skipping the next one does.',
+    title: 'Consistency',
+    body: 'Consistency counts weeks, not days: any week with at least one workout keeps the run going. A single quiet week is forgiven, and rest days never matter.',
   },
 ]
 
@@ -34,11 +34,11 @@ export default function Guide() {
       >
         <ChevronLeft size={18} /> Back
       </button>
-      <h1 className="font-display font-bold text-2xl md:text-3xl mb-8">How StepUp works</h1>
+      <h1 className="font-display font-semibold text-2xl md:text-3xl mb-8">How StepUp works</h1>
       <div>
         {SECTIONS.map((s) => (
-          <div key={s.title} className="border-t-2 border-ink py-5 first:pt-0">
-            <p className="font-bold mb-1">{s.title}</p>
+          <div key={s.title} className="border-t-2 border-line py-5 first:pt-0">
+            <p className="font-semibold mb-1">{s.title}</p>
             <p className="text-sm text-faint">{s.body}</p>
           </div>
         ))}

@@ -1,7 +1,7 @@
 import { db } from '../db/schema'
-import { getActivePlan } from '../db/schema'
+import { getActivePlan, getActiveProfile } from '../db/schema'
 import { getExerciseById, getSubstitutes } from '../db/exerciseLibrary'
-import { daysAgoISO } from './format'
+import { daysAgoISO, parseISODateLocal } from './format'
 
 const SKIP_REASON_LABELS: Record<string, string> = {
   'too-difficult': 'finding it too difficult',
@@ -21,7 +21,7 @@ export async function generateWeeklyRecap(): Promise<string> {
   const planned = plan?.sessions.length ?? completed.length
 
   const recentPRs = await db.personalRecords
-    .filter((r) => r.achievedAt >= Date.parse(weekAgo))
+    .filter((r) => !r.baseline && r.achievedAt >= parseISODateLocal(weekAgo).getTime())
     .toArray()
 
   const skipCounts = new Map<string, { count: number; reason: string }>()
@@ -55,7 +55,7 @@ export async function generateWeeklyRecap(): Promise<string> {
     } citing ${reasonLabel}`
 
     if (exercise) {
-      const equipment = (await db.profile.orderBy('createdAt').last())?.equipment ?? []
+      const equipment = (await getActiveProfile())?.equipment ?? []
       const substitute = getSubstitutes(exercise, equipment)[0]
       if (substitute) sentence += ` — consider swapping to ${substitute.name}`
     }

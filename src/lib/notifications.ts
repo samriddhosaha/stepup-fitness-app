@@ -16,7 +16,8 @@ async function notify(title: string, body: string): Promise<void> {
   if (registration) {
     await registration.showNotification(title, { body, icon: '/icons/icon-192.png' })
   } else {
-    new Notification(title, { body, icon: '/icons/icon-192.png' })
+    const n = new Notification(title, { body, icon: '/icons/icon-192.png' })
+    void n
   }
 }
 
@@ -38,10 +39,9 @@ function markNotifiedToday(key: string): void {
  */
 export async function runReminderChecks(params: {
   todayScheduledAndIncomplete: boolean
-  streak: number
   yesterdayScheduledAndMissed: boolean
 }): Promise<void> {
-  if (Notification.permission !== 'granted') return
+  if (!notificationsSupported() || Notification.permission !== 'granted') return
 
   const hour = new Date().getHours()
 
@@ -55,14 +55,10 @@ export async function runReminderChecks(params: {
 
   if (
     params.todayScheduledAndIncomplete &&
-    params.streak > 0 &&
     hour >= 18 &&
-    !alreadyNotifiedToday('stepup-notified-streak')
+    !alreadyNotifiedToday('stepup-notified-today')
   ) {
-    markNotifiedToday('stepup-notified-streak')
-    await notify(
-      'Still time today',
-      `Your ${params.streak}-session streak is waiting on today's workout.`,
-    )
+    markNotifiedToday('stepup-notified-today')
+    await notify('A session is scheduled today', 'Whenever you are ready. Skipping today is fine too.')
   }
 }
