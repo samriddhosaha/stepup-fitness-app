@@ -1,5 +1,6 @@
 import { db } from '../db/schema'
 import { weekStartOfISO } from './format'
+import { getExerciseById } from '../db/exerciseLibrary'
 import { estimatedOneRepMax } from './records'
 import type { WorkoutSession } from '../db/types'
 
@@ -44,4 +45,32 @@ export async function liftProgressionSeries(exerciseId: string): Promise<SeriesP
     if (best > 0) points.push({ date: s.date, value: Math.round(best * 10) / 10 })
   }
   return points.sort((a, b) => a.date.localeCompare(b.date))
+}
+
+/** Exercises that have at least one logged, completed set, most recently trained first. */
+export async function liftsWithData(): Promise<string[]> {
+  const sessions = await db.workoutSessions.where('completedAt').above(0).toArray()
+  const latest = new Map<string, string>()
+  for (const s of sessions) {
+    for (const ex of s.exercises) {
+      if (!ex.sets.some((set) => (set.weightKg ?? 0) > 0 && (set.reps ?? 0) > 0)) continue
+      if ((latest.get(ex.exerciseId) ?? '') < s.date) latest.set(ex.exerciseId, s.date)
+    }
+  }
+  return [...latest.entries()].sort((a, b) => b[1].localeCompare(a[1])).map(([id]) => id)
+}
+
+/** Completed sets per primary muscle for the Monday-start week containing `todayISO`. */
+export async function weeklyMuscleSets(todayISO: string): Promise<{ muscle: string; sets: number }[]> {
+  const start = weekStartOfISO(todayISO)
+  const sessions = await db.workoutSessions.where('date').aboveOrEqual(start).toArray()
+  const counts = new Map<string, number>()
+  for (const s of sessions) {
+    if (!s.completedAt) continue
+    for (const ex of s.exercises) {
+      const muscles = getExerciseById(ex.exerciseId)?.primaryMuscles ?? []
+      for (const m of muscles) counts.set(m, (counts.get(m) ?? 0) + ex.sets.length)
+    }
+  }
+  return [...counts.entries()].map(([muscle, sets]) => ({ muscle, sets })).sort((a, b) => b.sets - a.sets)
 }
