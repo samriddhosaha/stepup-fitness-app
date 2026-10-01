@@ -1,35 +1,11 @@
 import { db, getActivePlan } from '../db/schema'
-import { getExerciseById } from '../db/exerciseLibrary'
-import { daysAgoISO } from './format'
+import { daysAgoISO, parseISODateLocal } from './format'
 import { computeStreak } from './streak'
+import { SKIP_REASONS, type WeeklyReviewPayload } from '../../shared/weeklyReviewSchema'
 
-export interface WeeklyReviewExerciseSummary {
-  exerciseName: string
-  totalSets: number
-  avgRpe: number | null
-  metTargetRange: boolean
-}
+export type { WeeklyReviewPayload }
 
-export interface WeeklyReviewSkipSummary {
-  exerciseName: string
-  reason: string
-  count: number
-}
-
-export interface WeeklyReviewPRSummary {
-  exerciseName: string
-  value: number
-}
-
-export interface WeeklyReviewPayload {
-  sessionsCompleted: number
-  sessionsPlanned: number
-  exercises: WeeklyReviewExerciseSummary[]
-  skips: WeeklyReviewSkipSummary[]
-  prs: WeeklyReviewPRSummary[]
-  streak: number
-  bodyWeightTrendKg: { start: number; end: number } | null
-}
+const KNOWN_REASONS = new Set<string>(SKIP_REASONS)
 
 /**
  * Builds exactly the payload the opt-in AI weekly coach sends off-device —
@@ -59,13 +35,13 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
     }
   }
 
-  const exercises: WeeklyReviewExerciseSummary[] = Array.from(exerciseMap.entries()).map(
+  const exercises: WeeklyReviewPayload['exercises'] = Array.from(exerciseMap.entries()).map(
     ([exerciseId, data]) => {
       const rpes = data.sets.map((s) => s.rpe).filter((r): r is number => typeof r === 'number')
       const avgReps =
         data.sets.reduce((sum, s) => sum + (s.reps ?? 0), 0) / Math.max(data.sets.length, 1)
       return {
-        exerciseName: getExerciseById(exerciseId)?.name ?? exerciseId,
+        exerciseId,
         totalSets: data.sets.length,
         avgRpe: rpes.length ? Math.round((rpes.reduce((a, b) => a + b, 0) / rpes.length) * 10) / 10 : null,
         metTargetRange: avgReps >= data.high,
@@ -83,19 +59,19 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
       })
     }
   }
-  const skips: WeeklyReviewSkipSummary[] = Array.from(skipCounts.entries()).map(
+  const skips: WeeklyReviewPayload['skips'] = Array.from(skipCounts.entries()).map(
     ([exerciseId, info]) => ({
-      exerciseName: getExerciseById(exerciseId)?.name ?? exerciseId,
-      reason: info.reason,
+      exerciseId,
+      reason: KNOWN_REASONS.has(info.reason) ? (info.reason as WeeklyReviewPayload['skips'][number]['reason']) : 'unspecified',
       count: info.count,
     }),
   )
 
   const recentPRs = await db.personalRecords
-    .filter((r) => r.achievedAt >= Date.parse(weekAgo))
+    .filter((r) => r.achievedAt >= parseISODateLocal(weekAgo).getTime())
     .toArray()
-  const prs: WeeklyReviewPRSummary[] = recentPRs.map((pr) => ({
-    exerciseName: getExerciseById(pr.exerciseId)?.name ?? pr.exerciseId,
+  const prs: WeeklyReviewPayload['prs'] = recentPRs.map((pr) => ({
+    exerciseId: pr.exerciseId,
     value: pr.value,
   }))
 
