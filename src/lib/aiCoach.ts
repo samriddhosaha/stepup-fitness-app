@@ -1,7 +1,8 @@
 import { db, getActivePlan } from '../db/schema'
 import { daysAgoISO, parseISODateLocal } from './format'
 import { computeStreak } from './streak'
-import { SKIP_REASONS, type WeeklyReviewPayload } from '../../shared/weeklyReviewSchema'
+import { SKIP_REASONS } from '../../shared/skipReasons'
+import type { WeeklyReviewPayload } from '../../shared/weeklyReviewSchema'
 
 export type { WeeklyReviewPayload }
 

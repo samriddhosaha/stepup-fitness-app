@@ -1,13 +1,7 @@
 import { z } from 'zod'
+import { SKIP_REASONS } from './skipReasons.js'
 
-export const SKIP_REASONS = [
-  'too-difficult',
-  'equipment-not-free',
-  'discomfort-or-pain',
-  'running-out-of-time',
-  'another-reason',
-  'unspecified',
-] as const
+
 
 /** Exercise IDs only — names are resolved server-side from the library. */
 const exerciseId = z.string().min(1).max(64).regex(/^[a-z0-9-]+$/)
