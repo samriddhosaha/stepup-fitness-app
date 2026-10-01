@@ -167,9 +167,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       contents: userMessage,
       config: {
         systemInstruction: SYSTEM_PROMPT,
-        maxOutputTokens: 400,
-        // Reasoning tokens would otherwise eat the output budget on flash-lite-class models.
-        thinkingConfig: { thinkingBudget: 0 },
+        // Generous cap: reasoning-capable models can spend part of the budget thinking, and the
+        // reply is trimmed to ~600 characters afterwards anyway. (A thinking-budget override is
+        // rejected by newer models behind the moving alias, so it isn't set.)
+        maxOutputTokens: 1500,
         abortSignal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       },
     })

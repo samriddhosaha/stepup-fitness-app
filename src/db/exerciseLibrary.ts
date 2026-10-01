@@ -1,5 +1,5 @@
 import type { Exercise } from './types'
-import { LEGACY_META, NEW_EXERCISES, finalize, type BaseExercise } from './exerciseData'
+import { LEGACY_META, NEW_EXERCISES, finalize, type BaseExercise } from './exerciseData.js'
 
 // Warm-up ramp: ascending-load sets before the working sets, expressed as a
 // percentage of that day's working weight. Only defined for the three
