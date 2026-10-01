@@ -1,4 +1,5 @@
 import { db } from '../db/schema'
+import { todayISODate } from './format'
 
 interface BackupPayload {
   version: 1
@@ -33,7 +34,7 @@ export async function exportAllData(): Promise<void> {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `stepup-backup-${new Date().toISOString().slice(0, 10)}.json`
+  a.download = `stepup-backup-${todayISODate()}.json`
   a.click()
   URL.revokeObjectURL(url)
 }

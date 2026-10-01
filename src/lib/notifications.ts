@@ -41,7 +41,7 @@ export async function runReminderChecks(params: {
   streak: number
   yesterdayScheduledAndMissed: boolean
 }): Promise<void> {
-  if (Notification.permission !== 'granted') return
+  if (!notificationsSupported() || Notification.permission !== 'granted') return
 
   const hour = new Date().getHours()
 

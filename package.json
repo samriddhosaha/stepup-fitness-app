@@ -23,7 +23,8 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
@@ -40,6 +41,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.1.1",
     "oxlint": "^1.81.0",
     "playwright": "^1.63.0",

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { db, getActivePlan } from '../db/schema'
-import { toISODate, todayISODate } from '../lib/format'
+import { toISODate, todayISODate, weekdayIndexOfISO } from '../lib/format'
 import { Card } from '../components/ui'
 
 type DayStatus = 'completed' | 'missed' | 'rest' | 'scheduled' | 'none'
@@ -132,7 +132,7 @@ export default function History() {
                   </p>
                 </div>
               ))
-            ) : statusFor(selected, (new Date(selected).getDay() + 6) % 7) === 'rest' ? (
+            ) : statusFor(selected, weekdayIndexOfISO(selected)) === 'rest' ? (
               <p className="text-sm text-faint">Nothing scheduled. A rest day.</p>
             ) : (
               <p className="text-sm text-faint">Workout planned. Not completed.</p>

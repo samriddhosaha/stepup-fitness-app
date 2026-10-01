@@ -1,5 +1,5 @@
 import { db } from '../db/schema'
-import { toISODate } from './format'
+import { weekStartOfISO } from './format'
 import type { WorkoutSession } from '../db/types'
 
 export interface SeriesPoint {
@@ -12,19 +12,11 @@ export async function bodyWeightSeries(): Promise<SeriesPoint[]> {
   return rows.map((r) => ({ date: r.date, value: r.bodyWeightKg }))
 }
 
-function weekStartISO(dateISO: string): string {
-  const d = new Date(dateISO)
-  const day = d.getDay()
-  const diff = (day + 6) % 7
-  d.setDate(d.getDate() - diff)
-  return toISODate(d)
-}
-
 export async function weeklyVolumeSeries(): Promise<SeriesPoint[]> {
   const sessions = await db.workoutSessions.where('completedAt').above(0).toArray()
   const byWeek = new Map<string, number>()
   for (const s of sessions) {
-    const week = weekStartISO(s.date)
+    const week = weekStartOfISO(s.date)
     const tonnage = s.exercises.reduce(
       (sum, ex) =>
         sum +

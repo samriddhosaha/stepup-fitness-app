@@ -27,6 +27,28 @@ export function toISODate(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
+/**
+ * Parses a date-only `YYYY-MM-DD` string as local midnight. `new Date('YYYY-MM-DD')`
+ * is parsed as UTC, which shifts the weekday/day by one west of UTC — never use it
+ * on date-only strings.
+ */
+export function parseISODateLocal(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y!, (m ?? 1) - 1, d ?? 1)
+}
+
+/** Monday-first weekday index (0 = Mon … 6 = Sun) of a date-only string. */
+export function weekdayIndexOfISO(iso: string): number {
+  return (parseISODateLocal(iso).getDay() + 6) % 7
+}
+
+/** Monday of the week containing the date-only string, as `YYYY-MM-DD`. */
+export function weekStartOfISO(iso: string): string {
+  const d = parseISODateLocal(iso)
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  return toISODate(d)
+}
+
 export function daysAgoISO(days: number): string {
   const d = new Date()
   d.setDate(d.getDate() - days)
