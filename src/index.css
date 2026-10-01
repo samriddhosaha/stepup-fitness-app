@@ -23,7 +23,8 @@
   --c-accent: 16 22 47;
   --c-accent-soft: 234 253 198;
   --c-on-accent: 255 255 255;
-  --c-warning: 160 100 0;
+  --c-on-danger: 255 255 255;
+  --c-warning: 140 85 0;
   --c-danger: 200 40 40;
   --c-danger-soft: 253 232 232;
 
@@ -42,6 +43,7 @@
   --c-accent: 234 253 198;
   --c-accent-soft: 46 58 52;
   --c-on-accent: 16 22 47;
+  --c-on-danger: 16 22 47;
   --c-warning: 232 168 60;
   --c-danger: 248 113 113;
   --c-danger-soft: 58 26 26;
@@ -62,7 +64,8 @@
   --c-accent: 16 22 47;
   --c-accent-soft: 234 253 198;
   --c-on-accent: 255 255 255;
-  --c-warning: 160 100 0;
+  --c-on-danger: 255 255 255;
+  --c-warning: 140 85 0;
   --c-danger: 200 40 40;
   --c-danger-soft: 253 232 232;
 
@@ -80,6 +83,7 @@
   --c-accent: 234 253 198;
   --c-accent-soft: 46 58 52;
   --c-on-accent: 16 22 47;
+  --c-on-danger: 16 22 47;
   --c-warning: 232 168 60;
   --c-danger: 248 113 113;
   --c-danger-soft: 58 26 26;
@@ -98,6 +102,7 @@
   --color-accent: rgb(var(--c-accent));
   --color-accent-soft: rgb(var(--c-accent-soft));
   --color-on-accent: rgb(var(--c-on-accent));
+  --color-on-danger: rgb(var(--c-on-danger));
   --color-warning: rgb(var(--c-warning));
   --color-danger: rgb(var(--c-danger));
   --color-danger-soft: rgb(var(--c-danger-soft));

@@ -13,7 +13,7 @@ export function Button({
     primary: 'bg-accent text-on-accent',
     secondary: 'bg-elevated text-ink',
     ghost: 'bg-transparent text-ink hover:bg-surface',
-    danger: 'bg-danger text-white',
+    danger: 'bg-danger text-on-danger',
   }
   return <button className={`${base} ${variants[variant]} ${className}`} {...props} />
 }
