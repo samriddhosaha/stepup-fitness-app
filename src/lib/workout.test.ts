@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../db/schema'
 import {
+  deleteSet,
   discardAndStart,
+  restoreSet,
+  updateSet,
   finishSession,
   getInProgressSession,
   logSet,
@@ -93,7 +96,7 @@ describe('logSet', () => {
   it('rejects a blank set', async () => {
     const id = await newSession()
     expect(await logSet(id, 'goblet-squat', { setIndex: 0, weightKg: 16 })).toEqual({ ok: false, reason: 'incomplete' })
-    expect(await totalXP()).toBe(0)
+    expect((await db.workoutSessions.get(id))?.exercises).toEqual([])
   })
 
   it('rejects out-of-range reps and loads', async () => {
@@ -102,13 +105,12 @@ describe('logSet', () => {
     expect((await logSet(id, 'goblet-squat', { setIndex: 0, reps: 5, weightKg: 9000 })).ok).toBe(false)
   })
 
-  it('a double-tap logs exactly one set and one set of XP', async () => {
+  it('a double-tap logs exactly one set', async () => {
     const id = await newSession()
     const set = { setIndex: 0, weightKg: 16, reps: 8 }
     const results = await Promise.all([logSet(id, 'goblet-squat', set), logSet(id, 'goblet-squat', set)])
     expect(results.filter((r) => r.ok)).toHaveLength(1)
     expect((await db.workoutSessions.get(id))?.exercises[0]?.sets).toHaveLength(1)
-    expect(await totalXP()).toBe(5)
   })
 
   it('consecutive sets are all kept', async () => {
@@ -198,5 +200,58 @@ describe('finishSession', () => {
     const id = await loggedSession()
     await db.plans.clear() // plan rebuilt/removed
     expect((await finishSession(id, false)).status).toBe('completed')
+  })
+})
+
+describe('editing a workout in progress', () => {
+  async function withThreeSets() {
+    const id = await newSession()
+    for (const [i, reps] of [8, 9, 10].entries()) {
+      await logSet(id, 'goblet-squat', { setIndex: i, weightKg: 16, reps })
+    }
+    return id
+  }
+  const sets = async (id: number) => (await db.workoutSessions.get(id))?.exercises[0]?.sets
+
+  it('edits a set in place', async () => {
+    const id = await withThreeSets()
+    expect(await updateSet(id, 'goblet-squat', 1, { reps: 12, note: 'felt easy' })).toBe(true)
+    expect((await sets(id))?.[1]).toMatchObject({ reps: 12, note: 'felt easy', weightKg: 16, setIndex: 1 })
+  })
+
+  it('refuses an out-of-range edit', async () => {
+    const id = await withThreeSets()
+    expect(await updateSet(id, 'goblet-squat', 1, { reps: 9999 })).toBe(false)
+    expect((await sets(id))?.[1]?.reps).toBe(9)
+  })
+
+  it('deletes a set and keeps setIndex contiguous, so the next log lands in the right slot', async () => {
+    const id = await withThreeSets()
+    expect(await deleteSet(id, 'goblet-squat', 0)).toBe(true)
+    expect((await sets(id))?.map((s) => [s.setIndex, s.reps])).toEqual([[0, 9], [1, 10]])
+    expect((await logSet(id, 'goblet-squat', { setIndex: 2, weightKg: 16, reps: 7 })).ok).toBe(true)
+  })
+
+  it('undo puts the deleted set back in its original position', async () => {
+    const id = await withThreeSets()
+    const removed = (await sets(id))![1]!
+    await deleteSet(id, 'goblet-squat', 1)
+    await restoreSet(id, 'goblet-squat', 1, removed)
+    expect((await sets(id))?.map((s) => s.reps)).toEqual([8, 9, 10])
+  })
+
+  it('XP counts the sets that exist at the end, so delete-and-relog cannot farm it', async () => {
+    const id = await withThreeSets()
+    await deleteSet(id, 'goblet-squat', 2)
+    await logSet(id, 'goblet-squat', { setIndex: 2, weightKg: 16, reps: 10 })
+    await finishSession(id, false)
+    const setXp = (await db.xpEvents.toArray()).filter((e) => e.type === 'set')
+    expect(setXp).toHaveLength(3)
+  })
+
+  it('cannot edit a finished session', async () => {
+    const id = await withThreeSets()
+    await finishSession(id, false)
+    expect(await deleteSet(id, 'goblet-squat', 0)).toBe(false)
   })
 })

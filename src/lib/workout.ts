@@ -3,6 +3,7 @@ import { todayISODate } from './format'
 import { awardXP } from './xp'
 import { recordSessionPRs } from './records'
 import { nextExerciseState } from './overload'
+import { rebuildExerciseStates } from './exerciseStateBackfill'
 import { REPS_RANGE, isInRange, WORKOUT_LOAD_KG_RANGE } from './validation'
 import type {
   LoggedSet,
@@ -118,7 +119,7 @@ export async function logSet(
     return { ok: false, reason: 'out-of-range' }
   }
 
-  return db.transaction('rw', [db.workoutSessions, db.xpEvents], async (): Promise<LogResult> => {
+  return db.transaction('rw', db.workoutSessions, async (): Promise<LogResult> => {
     const session = await db.workoutSessions.get(sessionId)
     if (!session || session.completedAt) return { ok: false, reason: 'missing' }
 
@@ -132,9 +133,47 @@ export async function logSet(
     entry.sets.push(set)
 
     await db.workoutSessions.update(sessionId, { exercises })
-    await awardXP('set')
     return { ok: true }
   })
+}
+
+/** Applies `change` to one exercise's sets and keeps `setIndex` contiguous. */
+async function mutateSets(
+  sessionId: number,
+  exerciseId: string,
+  change: (sets: LoggedSet[]) => LoggedSet[] | null,
+): Promise<boolean> {
+  return db.transaction('rw', db.workoutSessions, async () => {
+    const session = await db.workoutSessions.get(sessionId)
+    if (!session || session.completedAt) return false
+    const exercises = session.exercises.map((e) => ({ ...e, sets: [...e.sets] }))
+    const entry = exercises.find((e) => e.exerciseId === exerciseId)
+    if (!entry) return false
+    const next = change(entry.sets)
+    if (!next) return false
+    entry.sets = next.map((s, i) => ({ ...s, setIndex: i }))
+    await db.workoutSessions.update(sessionId, { exercises })
+    return true
+  })
+}
+
+export function updateSet(sessionId: number, exerciseId: string, setIndex: number, patch: Partial<LoggedSet>) {
+  const merged = { ...patch }
+  if (merged.reps !== undefined && !isInRange(merged.reps, REPS_RANGE)) return Promise.resolve(false)
+  if (merged.weightKg !== undefined && !isInRange(merged.weightKg, WORKOUT_LOAD_KG_RANGE)) return Promise.resolve(false)
+  return mutateSets(sessionId, exerciseId, (sets) => {
+    if (!sets[setIndex]) return null
+    return sets.map((s, i) => (i === setIndex ? { ...s, ...merged } : s))
+  })
+}
+
+export function deleteSet(sessionId: number, exerciseId: string, setIndex: number) {
+  return mutateSets(sessionId, exerciseId, (sets) => (sets[setIndex] ? sets.filter((_, i) => i !== setIndex) : null))
+}
+
+/** Puts a deleted set back where it was (the Undo for deleteSet). */
+export function restoreSet(sessionId: number, exerciseId: string, at: number, set: LoggedSet) {
+  return mutateSets(sessionId, exerciseId, (sets) => [...sets.slice(0, at), set, ...sets.slice(at)])
 }
 
 export async function recordSkip(sessionId: number, skip: SkipEvent): Promise<void> {
@@ -185,11 +224,13 @@ export async function finishSession(
 
       const prs = await recordSessionPRs(sessionId, logged, now)
 
+      // XP is settled here, once, so editing or deleting sets mid-workout can't be farmed.
       for (const ex of logged) {
         const planned = plannedFor(ex.exerciseId)
         const prev = await db.exerciseState.get(ex.exerciseId)
         const next = nextExerciseState(prev, ex.exerciseId, planned, ex.sets, session.date, now)
         if (next) await db.exerciseState.put(next)
+        for (let i = 0; i < ex.sets.length; i += 1) await awardXP('set', ex.exerciseId)
         if (ex.sets.length >= (planned?.targetSets ?? 3)) await awardXP('exercise', ex.exerciseId)
       }
       for (const pr of prs) await awardXP('pr', pr.exerciseId)
@@ -198,6 +239,53 @@ export async function finishSession(
       return { status: 'completed', prs }
     },
   )
+}
+
+/** Re-derives exerciseState for the given exercises from the completed history that remains. */
+async function recomputeExerciseState(exerciseIds: string[]): Promise<void> {
+  const done = await db.workoutSessions.where('completedAt').above(0).toArray()
+  const rebuilt = new Map(rebuildExerciseStates(done).map((s) => [s.exerciseId, s]))
+  for (const id of exerciseIds) {
+    const next = rebuilt.get(id)
+    if (next) await db.exerciseState.put(next)
+    else await db.exerciseState.delete(id)
+  }
+}
+
+/**
+ * Deletes a finished workout from history. Its personal records go with it and progression
+ * state is re-derived from what remains. XP already earned is kept (XP never goes down).
+ */
+export async function deleteCompletedSession(sessionId: number): Promise<void> {
+  await db.transaction('rw', [db.workoutSessions, db.personalRecords, db.exerciseState], async () => {
+    const session = await db.workoutSessions.get(sessionId)
+    if (!session) return
+    await db.workoutSessions.delete(sessionId)
+    await db.personalRecords.where('sessionId').equals(sessionId).delete()
+    await recomputeExerciseState(session.exercises.map((e) => e.exerciseId))
+  })
+}
+
+/** Corrects a logged set in a finished workout (weight, reps, effort, note). */
+export async function updateCompletedSet(
+  sessionId: number,
+  exerciseId: string,
+  setIndex: number,
+  patch: Pick<LoggedSet, 'weightKg' | 'reps' | 'rpe' | 'note'>,
+): Promise<boolean> {
+  if (patch.reps !== undefined && !isInRange(patch.reps, REPS_RANGE)) return false
+  if (patch.weightKg !== undefined && !isInRange(patch.weightKg, WORKOUT_LOAD_KG_RANGE)) return false
+  return db.transaction('rw', [db.workoutSessions, db.exerciseState, db.personalRecords], async () => {
+    const session = await db.workoutSessions.get(sessionId)
+    const entry = session?.exercises.find((e) => e.exerciseId === exerciseId)
+    if (!session || !entry?.sets[setIndex]) return false
+    const exercises = session.exercises.map((e) =>
+      e.exerciseId === exerciseId ? { ...e, sets: e.sets.map((s, i) => (i === setIndex ? { ...s, ...patch } : s)) } : e,
+    )
+    await db.workoutSessions.update(sessionId, { exercises })
+    await recomputeExerciseState([exerciseId])
+    return true
+  })
 }
 
 export async function discardSession(sessionId: number): Promise<void> {

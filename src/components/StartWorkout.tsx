@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { discardAndStart, startSession } from '../lib/workout'
 import { track } from '../lib/analytics'
-import { Button, Card } from './ui'
+import { Button } from './ui'
+import { Dialog } from './overlays'
 import type { PlanSession, WorkoutSession } from '../db/types'
 
 /**
@@ -31,30 +32,31 @@ export function useStartWorkout(): { begin: (s: PlanSession) => Promise<void>; d
     navigate('/workout/active')
   }
 
-  const dialog = conflict && (
-    <Card className="mb-6">
-      <p className="font-semibold mb-1">You have a workout in progress</p>
-      <p className="text-sm text-faint mb-4">
-        {conflict.existing.planSessionName}, started{' '}
-        {new Date(conflict.existing.startedAt).toLocaleString(undefined, {
-          weekday: 'short',
-          hour: 'numeric',
-          minute: '2-digit',
-        })}
-        . Resume it, or discard it and start {conflict.wanted.name}.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Button className="flex-1" onClick={() => navigate('/workout/active')}>
-          Resume {conflict.existing.planSessionName}
-        </Button>
-        <Button variant="secondary" className="flex-1" onClick={discardAndBegin}>
-          Discard and start {conflict.wanted.name}
-        </Button>
-        <Button variant="ghost" onClick={() => setConflict(null)}>
-          Cancel
-        </Button>
-      </div>
-    </Card>
+  const dialog = (
+    <Dialog open={conflict !== null} onClose={() => setConflict(null)} title="You have a workout in progress">
+      {conflict && (
+        <>
+          <p className="text-sm text-faint mb-4">
+            {conflict.existing.planSessionName}, started{' '}
+            {new Date(conflict.existing.startedAt).toLocaleString(undefined, {
+              weekday: 'short',
+              hour: 'numeric',
+              minute: '2-digit',
+            })}
+            . Resume it, or discard it and start {conflict.wanted.name}.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Button onClick={() => navigate('/workout/active')}>Resume {conflict.existing.planSessionName}</Button>
+            <Button variant="secondary" onClick={discardAndBegin}>
+              Discard and start {conflict.wanted.name}
+            </Button>
+            <Button variant="ghost" onClick={() => setConflict(null)}>
+              Cancel
+            </Button>
+          </div>
+        </>
+      )}
+    </Dialog>
   )
 
   return { begin, dialog }

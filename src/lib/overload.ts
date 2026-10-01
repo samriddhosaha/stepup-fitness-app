@@ -79,6 +79,12 @@ function incrementFor(exerciseId: string, baseInUnit: number, unit: WeightUnit):
   return baseInUnit < 10 ? 1 : 2
 }
 
+/** Size of one +/- tap on the weight field, in the display unit. */
+export function loadStepFor(exerciseId: string, weightKg: number | undefined, unit: WeightUnit): number {
+  const inUnit = weightKg ? kgToUnit(weightKg, unit) : 0
+  return incrementFor(exerciseId, inUnit, unit)
+}
+
 function stateFromHistory(
   planned: TargetReps,
   exerciseId: string,
