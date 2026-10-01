@@ -119,7 +119,9 @@ export interface LoggedSet {
   setIndex: number
   weightKg?: number
   reps?: number
+  durationSeconds?: number
   rpe?: number // 1-5
+  note?: string
 }
 
 export interface LoggedExercise {
@@ -144,6 +146,18 @@ export interface WorkoutSession {
   completedAt?: number
   durationSeconds?: number
   finishedEarly?: boolean
+  // --- v2: durable in-progress state (C-06) and plan-independent history (C-08) ---
+  /** Planned exercises as they were when the session started; survives plan rebuilds. */
+  plannedSnapshot?: PlanExercise[]
+  /** Exercise order for this session, with swaps applied. */
+  exerciseOrder?: string[]
+  /** Maps a swapped-in exerciseId back to the planned exerciseId it replaced. */
+  swapMap?: Record<string, string>
+  currentIndex?: number
+  /** Epoch ms when the current rest ends; the timer derives from this so it survives reloads. */
+  restEndsAt?: number
+  /** Weekday (0 = Mon) this session was scheduled for when it started. */
+  plannedDayIndex?: number
 }
 
 export interface ProgressSnapshot {
@@ -152,22 +166,22 @@ export interface ProgressSnapshot {
   bodyWeightKg: number
 }
 
+export type PRKind = 'weight' | 'e1rm' | 'reps'
+
 export interface PersonalRecord {
   id?: number
   exerciseId: string
-  value: number // e.g. estimated 1RM or heaviest weight for reps
+  value: number // kg for 'weight' / 'e1rm', reps for 'reps'
   reps: number
   achievedAt: number
+  sessionId?: number
+  /** Missing on pre-v2 rows, which were all estimated-1RM records. */
+  kind?: PRKind
+  /** First log of an exercise: recorded silently, never shown or rewarded as a PR. */
+  baseline?: boolean
 }
 
-export type XPEventType =
-  | 'set'
-  | 'exercise'
-  | 'workout'
-  | 'pr'
-  | 'streak'
-  | 'weekly-mission'
-  | 'loss'
+export type XPEventType = 'set' | 'exercise' | 'workout' | 'pr'
 
 export interface XPEvent {
   id?: number
@@ -182,4 +196,27 @@ export interface AppEvent {
   name: string
   propsJson?: string
   occurredAt: number
+}
+
+/** What the engine last saw for an exercise; progression reads this, not the plan. */
+export interface ExerciseState {
+  exerciseId: string
+  workingWeightKg?: number
+  lastReps: number[]
+  lastRpe?: number
+  lastDate: string // YYYY-MM-DD
+  consecutiveFails: number
+  updatedAt: number
+}
+
+export interface SettingRow {
+  key: string
+  value: unknown
+}
+
+export interface WeeklyReview {
+  weekKey: string // Monday of the week, YYYY-MM-DD
+  payloadHash: string
+  text: string
+  createdAt: number
 }

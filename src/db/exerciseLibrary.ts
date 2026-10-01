@@ -450,8 +450,10 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   },
 ]
 
+const EXERCISE_BY_ID = new Map(EXERCISE_LIBRARY.map((e) => [e.id, e]))
+
 export function getExerciseById(id: string): Exercise | undefined {
-  return EXERCISE_LIBRARY.find((e) => e.id === id)
+  return EXERCISE_BY_ID.get(id)
 }
 
 export function getSubstitutes(exercise: Exercise, availableEquipment: string[]): Exercise[] {
