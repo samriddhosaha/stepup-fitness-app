@@ -11,6 +11,14 @@ import type {
   ExerciseState,
   SettingRow,
   WeeklyReview,
+  WaterLog,
+  BodyMeasurement,
+  CheckIn,
+  Habit,
+  HabitLog,
+  CustomFood,
+  MealLog,
+  SavedMeal,
 } from './types'
 import { rebuildExerciseStates } from '../lib/exerciseStateBackfill'
 
@@ -28,6 +36,14 @@ export class StepUpDB extends Dexie {
   settings!: EntityTable<SettingRow, 'key'>
   weeklyReviews!: EntityTable<WeeklyReview, 'weekKey'>
   customExercises!: EntityTable<Exercise, 'id'>
+  waterLogs!: EntityTable<WaterLog, 'id'>
+  bodyMeasurements!: EntityTable<BodyMeasurement, 'id'>
+  checkIns!: EntityTable<CheckIn, 'id'>
+  habits!: EntityTable<Habit, 'id'>
+  habitLogs!: EntityTable<HabitLog, 'id'>
+  foods!: EntityTable<CustomFood, 'id'>
+  mealLogs!: EntityTable<MealLog, 'id'>
+  savedMeals!: EntityTable<SavedMeal, 'id'>
 
   constructor(name = 'stepup-db') {
     super(name)
@@ -61,6 +77,23 @@ export class StepUpDB extends Dexie {
 
     // v3: the person's own exercises
     this.version(3).stores({ customExercises: 'id' })
+
+    // v4: daily health. Purely additive. Unique indexes enforce "one check-in per day" and
+    // "a habit is either done or not on a given day" in the database itself.
+    this.version(4).stores({
+      waterLogs: '++id, date, loggedAt',
+      bodyMeasurements: '++id, date, type',
+      checkIns: '++id, &date',
+      habits: '++id, createdAt',
+      habitLogs: '++id, habitId, date, &[habitId+date]',
+    })
+
+    // v5: nutrition. Additive: custom foods, a meal-by-meal log (macros stored as eaten), favourites.
+    this.version(5).stores({
+      foods: '++id, name',
+      mealLogs: '++id, date, loggedAt',
+      savedMeals: '++id, name',
+    })
   }
 }
 
@@ -103,6 +136,14 @@ const ALL_TABLES = [
   'settings',
   'weeklyReviews',
   'customExercises',
+  'waterLogs',
+  'bodyMeasurements',
+  'checkIns',
+  'habits',
+  'habitLogs',
+  'foods',
+  'mealLogs',
+  'savedMeals',
 ] as const
 
 /** Deletes the whole database (and reopens an empty one) plus every localStorage key StepUp wrote. */

@@ -55,7 +55,7 @@ describe('schema migrations', () => {
     const db = new StepUpDB('mig-test')
     await db.open()
 
-    expect(db.verno).toBe(3)
+    expect(db.verno).toBe(5)
     expect((await db.profile.toArray())[0]?.name).toBe('Old')
     expect(await db.workoutSessions.count()).toBe(3)
     expect(await db.personalRecords.count()).toBe(1)
@@ -75,7 +75,7 @@ describe('schema migrations', () => {
   it('opens a brand-new database at the latest version', async () => {
     const db = new StepUpDB('fresh-test')
     await db.open()
-    expect(db.verno).toBe(3)
+    expect(db.verno).toBe(5)
     expect(await db.customExercises.count()).toBe(0)
     expect(await db.exerciseState.count()).toBe(0)
     db.close()
@@ -108,7 +108,7 @@ describe('schema v2 → v3', () => {
 
     const db = new StepUpDB('mig-v2')
     await db.open()
-    expect(db.verno).toBe(3)
+    expect(db.verno).toBe(5)
     expect((await db.settings.get('installToken'))?.value).toBe('abc')
     expect(await db.exerciseState.count()).toBe(1)
     await db.customExercises.add({ id: 'custom-x', name: 'X' } as never)

@@ -7,7 +7,7 @@ import type { WorkoutSession } from '../db/types'
 
 // Loaded lazily from the Profile screen so zod stays out of the main bundle.
 
-export const BACKUP_VERSION = 3
+export const BACKUP_VERSION = 4
 export const MAX_IMPORT_BYTES = 25 * 1024 * 1024
 
 const num = z.number().finite()
@@ -69,6 +69,13 @@ const profile = z.object({
   weightUnit: z.enum(['kg', 'lb']),
   appearance: z.enum(['light', 'dark', 'system']),
   aiCoachEnabled: z.boolean().optional(),
+  aiCoachSource: z.enum(['hosted', 'own-key']).optional(),
+  waterGoalMl: num.min(0).max(20000).optional(),
+  waterReminderHours: num.min(0).max(24).optional(),
+  activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'very-active']).optional(),
+  nutritionGoal: z.enum(['lose', 'maintain', 'gain']).optional(),
+  calorieTargetKcal: num.min(0).max(20000).optional(),
+  proteinTargetG: num.min(0).max(1000).optional(),
   onboardingCompleted: z.boolean(),
   createdAt: num,
 })
@@ -99,6 +106,7 @@ const workoutSession = z.object({
         exerciseId: z.string().min(1),
         sets: z.array(loggedSet).max(200),
         swappedFromExerciseId: z.string().optional(),
+        supersetGroup: z.string().max(40).optional(),
       }),
     )
     .max(100),
@@ -113,6 +121,8 @@ const workoutSession = z.object({
   currentIndex: z.number().int().min(0).optional(),
   restEndsAt: num.optional(),
   plannedDayIndex: z.number().int().min(0).max(6).optional(),
+  notes: z.string().max(5000).optional(),
+  supersetLinks: z.array(z.number().int().min(0).max(100)).max(100).optional(),
 })
 const progressSnapshot = z.object({ id, date: isoDate, bodyWeightKg: num.min(0).max(1000) })
 const personalRecord = z.object({
@@ -160,6 +170,31 @@ const customExercise = z.object({
   kit: z.enum(['barbell', 'dumbbell', 'bodyweight', 'machine', 'band']),
 })
 
+// --- daily health (v4) and nutrition (v5) ---
+const oneToThree = z.union([z.literal(1), z.literal(2), z.literal(3)])
+const waterLog = z.object({ id, date: isoDate, ml: num.min(0).max(20000), loggedAt: num })
+const bodyMeasurement = z.object({
+  id,
+  date: isoDate,
+  type: z.enum(['waist', 'chest', 'hips', 'arm', 'thigh', 'neck']),
+  valueCm: num.min(0).max(500),
+})
+const checkIn = z.object({ id, date: isoDate, sleepHours: num.min(0).max(24), soreness: oneToThree, energy: oneToThree, createdAt: num })
+const habit = z.object({ id, name: z.string().min(1).max(80), createdAt: num, archived: z.boolean().optional() })
+const habitLog = z.object({ id, habitId: z.number().int().positive(), date: isoDate })
+const macros = { calories: num.min(0).max(20000), proteinG: num.min(0).max(2000), carbsG: num.min(0).max(2000), fatG: num.min(0).max(2000) }
+const customFood = z.object({ id, name: z.string().min(1).max(80), servingLabel: z.string().max(80), ...macros, createdAt: num })
+const mealLog = z.object({
+  id,
+  date: isoDate,
+  name: z.string().max(120),
+  servings: num.min(0).max(1000),
+  loggedAt: num,
+  foodRef: z.string().max(100).optional(),
+  ...macros,
+})
+const savedMeal = z.object({ id, name: z.string().min(1).max(120), ...macros, createdAt: num })
+
 const backupSchema = z.object({
   version: z.number().int().min(1),
   exportedAt: num,
@@ -173,6 +208,15 @@ const backupSchema = z.object({
     appEvents: z.array(appEvent).default([]),
     exerciseState: z.array(exerciseState).optional(),
     customExercises: z.array(customExercise).max(500).optional(),
+    // added after v3: older files simply don't have them
+    waterLogs: z.array(waterLog).optional(),
+    bodyMeasurements: z.array(bodyMeasurement).optional(),
+    checkIns: z.array(checkIn).optional(),
+    habits: z.array(habit).max(200).optional(),
+    habitLogs: z.array(habitLog).optional(),
+    foods: z.array(customFood).max(5000).optional(),
+    mealLogs: z.array(mealLog).optional(),
+    savedMeals: z.array(savedMeal).max(2000).optional(),
   }),
 })
 
@@ -246,6 +290,14 @@ export async function buildBackup(): Promise<Backup> {
       appEvents: await db.appEvents.toArray(),
       exerciseState: await db.exerciseState.toArray(),
       customExercises: await db.customExercises.toArray(),
+      waterLogs: await db.waterLogs.toArray(),
+      bodyMeasurements: await db.bodyMeasurements.toArray(),
+      checkIns: await db.checkIns.toArray(),
+      habits: await db.habits.toArray(),
+      habitLogs: await db.habitLogs.toArray(),
+      foods: await db.foods.toArray(),
+      mealLogs: await db.mealLogs.toArray(),
+      savedMeals: await db.savedMeals.toArray(),
     },
   }
 }
@@ -255,7 +307,26 @@ export async function applyBackup(backup: Backup): Promise<void> {
   const t = backup.tables
   await db.transaction(
     'rw',
-    [db.profile, db.plans, db.workoutSessions, db.progressSnapshots, db.personalRecords, db.xpEvents, db.appEvents, db.exerciseState, db.weeklyReviews, db.customExercises],
+    [
+      db.profile,
+      db.plans,
+      db.workoutSessions,
+      db.progressSnapshots,
+      db.personalRecords,
+      db.xpEvents,
+      db.appEvents,
+      db.exerciseState,
+      db.weeklyReviews,
+      db.customExercises,
+      db.waterLogs,
+      db.bodyMeasurements,
+      db.checkIns,
+      db.habits,
+      db.habitLogs,
+      db.foods,
+      db.mealLogs,
+      db.savedMeals,
+    ],
     async () => {
       await Promise.all([
         db.profile.clear(),
@@ -268,6 +339,14 @@ export async function applyBackup(backup: Backup): Promise<void> {
         db.exerciseState.clear(),
         db.weeklyReviews.clear(),
         db.customExercises.clear(),
+        db.waterLogs.clear(),
+        db.bodyMeasurements.clear(),
+        db.checkIns.clear(),
+        db.habits.clear(),
+        db.habitLogs.clear(),
+        db.foods.clear(),
+        db.mealLogs.clear(),
+        db.savedMeals.clear(),
       ])
       await db.profile.bulkAdd(t.profile)
       await db.plans.bulkAdd(t.plans)
@@ -278,6 +357,14 @@ export async function applyBackup(backup: Backup): Promise<void> {
       await db.appEvents.bulkAdd(t.appEvents)
       await db.exerciseState.bulkAdd(t.exerciseState ?? [])
       await db.customExercises.bulkAdd(t.customExercises ?? [])
+      await db.waterLogs.bulkAdd(t.waterLogs ?? [])
+      await db.bodyMeasurements.bulkAdd(t.bodyMeasurements ?? [])
+      await db.checkIns.bulkAdd(t.checkIns ?? [])
+      await db.habits.bulkAdd(t.habits ?? [])
+      await db.habitLogs.bulkAdd(t.habitLogs ?? [])
+      await db.foods.bulkAdd(t.foods ?? [])
+      await db.mealLogs.bulkAdd(t.mealLogs ?? [])
+      await db.savedMeals.bulkAdd(t.savedMeals ?? [])
     },
   )
 }

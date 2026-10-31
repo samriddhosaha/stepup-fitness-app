@@ -23,6 +23,8 @@ export type InjuryArea = 'lower-back' | 'knee' | 'shoulder' | 'wrist-elbow' | 'n
 export type WeightUnit = 'kg' | 'lb'
 export type Appearance = 'light' | 'dark' | 'system'
 export type Sex = 'male' | 'female' | 'unspecified'
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active'
+export type NutritionGoal = 'lose' | 'maintain' | 'gain'
 
 export interface Profile {
   id?: number
@@ -53,6 +55,18 @@ export interface Profile {
   weightUnit: WeightUnit
   appearance: Appearance
   aiCoachEnabled?: boolean
+  /** Where AI requests go. Default 'hosted' (this app's server); 'own-key' goes straight to Google with the user's key. */
+  aiCoachSource?: 'hosted' | 'own-key'
+  // --- daily health (v4) and nutrition (v5) settings ---
+  /** Daily water goal in ml. When unset the goal is derived from bodyweight. */
+  waterGoalMl?: number
+  /** Remind about water every N hours while the app is open; unset = off. */
+  waterReminderHours?: number
+  activityLevel?: ActivityLevel
+  nutritionGoal?: NutritionGoal
+  /** Overrides for the calculated daily targets; unset = use the calculation. */
+  calorieTargetKcal?: number
+  proteinTargetG?: number
   onboardingCompleted: boolean
   createdAt: number
 }
@@ -163,6 +177,8 @@ export interface LoggedExercise {
   exerciseId: string
   sets: LoggedSet[]
   swappedFromExerciseId?: string
+  /** Exercises sharing a label were done as a superset in this workout. */
+  supersetGroup?: string
 }
 
 export interface SkipEvent {
@@ -193,6 +209,10 @@ export interface WorkoutSession {
   restEndsAt?: number
   /** Weekday (0 = Mon) this session was scheduled for when it started. */
   plannedDayIndex?: number
+  /** A free-text note about the whole workout. */
+  notes?: string
+  /** Index i is in this list when exercise i is supersetted with exercise i + 1 (positions in `exerciseOrder`). */
+  supersetLinks?: number[]
 }
 
 export interface ProgressSnapshot {
@@ -253,5 +273,86 @@ export interface WeeklyReview {
   weekKey: string // Monday of the week, YYYY-MM-DD
   payloadHash: string
   text: string
+  createdAt: number
+}
+
+// ---- Daily health (schema v4) -------------------------------------------------------
+
+export interface WaterLog {
+  id?: number
+  date: string // YYYY-MM-DD
+  ml: number
+  loggedAt: number
+}
+
+export type MeasurementType = 'waist' | 'chest' | 'hips' | 'arm' | 'thigh' | 'neck'
+
+export interface BodyMeasurement {
+  id?: number
+  date: string // YYYY-MM-DD
+  type: MeasurementType
+  valueCm: number
+}
+
+/** One quick daily check-in. Sleep is hours; soreness and energy are 1-3. */
+export interface CheckIn {
+  id?: number
+  date: string // YYYY-MM-DD, one per day
+  sleepHours: number
+  soreness: 1 | 2 | 3 // 1 fresh, 3 very sore
+  energy: 1 | 2 | 3 // 1 low, 3 high
+  createdAt: number
+}
+
+export interface Habit {
+  id?: number
+  name: string
+  createdAt: number
+  archived?: boolean
+}
+
+/** A row means the habit was done on that date. */
+export interface HabitLog {
+  id?: number
+  habitId: number
+  date: string // YYYY-MM-DD
+}
+
+// ---- Nutrition (schema v5) ----------------------------------------------------------
+
+export interface Macros {
+  calories: number
+  proteinG: number
+  carbsG: number
+  fatG: number
+}
+
+/** A food the user created. (The built-in list lives in code, not the database.) */
+export interface CustomFood extends Macros {
+  id?: number
+  name: string
+  /** What one serving is, e.g. "1 bowl (200 g)". Macros are per serving. */
+  servingLabel: string
+  createdAt: number
+}
+
+/**
+ * One thing eaten. Macros are a snapshot of what was eaten (already scaled by
+ * `servings`), so editing a custom food later never rewrites history.
+ */
+export interface MealLog extends Macros {
+  id?: number
+  date: string // YYYY-MM-DD
+  name: string
+  servings: number
+  loggedAt: number
+  /** 'seed:<id>' or 'custom:<id>' when it came from a food; absent for quick-add. */
+  foodRef?: string
+}
+
+/** A favourite: a named set of macros that can be logged in one tap. */
+export interface SavedMeal extends Macros {
+  id?: number
+  name: string
   createdAt: number
 }
