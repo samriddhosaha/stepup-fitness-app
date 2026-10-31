@@ -8,9 +8,12 @@ A personal trainer that lives in your phone. A local-first strength-training tra
 - **Real progressive overload.** The first time you do a lift you pick the weight. After that StepUp suggests your next weight from what you actually lifted: add load when every set tops the rep range, hold when it was heavy, deload after two tough sessions.
 - **A logger that gets out of the way.** Weight and reps, timed holds with a stopwatch, or minutes and distance. Edit, delete and undo sets, see last time's numbers, and use a rest timer that survives reloads. A workout resumes exactly where you left it.
 - **History and progress.** Day-by-day detail, per-exercise history, personal bests, body weight with a 7-day average, weekly volume and sets per muscle. Every chart has a data table.
-- **Calm consistency.** Weekly consistency instead of streaks, optional XP that never goes down, and no pressure.
+- **Calm consistency.** Weekly consistency instead of streaks, optional XP that never goes down, milestones that can't be lost, a twelve-week training-days view, and no pressure.
+- **A daily log.** The Log tab holds water (with an optional on-device reminder), a three-tap recovery check-in that turns into a plain-language readiness hint, daily habits, a quick weigh-in and optional tape measurements.
+- **Protein-first nutrition.** Search about 55 approximate everyday foods (Indian staples first), quick-add numbers, save custom foods and favourites. Targets come from Mifflin-St Jeor, your activity and goal, and anything you set yourself wins. Estimates, not medical advice.
+- **At the bar.** A plate calculator for barbell lifts, and a picture of your workout drawn on your device that you can share or save (no name on it).
 - **Your data stays yours.** Everything is stored in IndexedDB. Export a backup or a CSV, import with a preview, add your workout days to a calendar. Works offline and installs as an app.
-- **Optional AI weekly review.** Off by default. See below.
+- **Optional AI weekly review.** Off by default, with an optional second switch for nutrition and recovery averages, and a "plan next week" button. See below.
 
 ## Stack
 
@@ -44,7 +47,7 @@ cp .env.example .env
 # fill in GEMINI_API_KEY and, if you like, the other variables in that file
 ```
 
-The request carries only exercise IDs and aggregates (the exact payload can be previewed in Profile). The server validates the payload, checks the origin, rate limits per IP, install token and day, and returns generic errors. Without a key, or if the service is unavailable, the app shows a local, rules-based recap instead; the AI never blocks the core app.
+The request carries only exercise IDs and aggregates (the exact payload can be previewed in Profile). Nutrition, recovery and water averages are a separate opt-in with their own consent, and never include food or habit names. The server validates the payload, checks the origin, rate limits per IP, install token and day, and returns generic errors. Without a key, or if the service is unavailable, the app shows a local, rules-based recap instead; the AI never blocks the core app.
 
 ## Deploying
 
@@ -54,8 +57,8 @@ The request carries only exercise IDs and aggregates (the exact payload can be p
 
 ```
 src/db/          Dexie schema and migrations, types, exercise library, data hooks (repo.ts)
-src/lib/         Plan generator, progression, workout lifecycle, backup, units, and other pure logic
-src/features/    Workout logger, history, plan editing, onboarding
+src/lib/         Plan generator, progression, workout lifecycle, backup, units, health, nutrition, and other pure logic
+src/features/    Workout logger, history, plan editing, onboarding, health (Log tab), nutrition, progress cards
 src/components/  Shared UI, app shell, charts, update prompt
 src/routes/      One file per screen (most lazy-loaded)
 api/, shared/    The optional server function and the code it shares with the client
@@ -63,7 +66,7 @@ e2e/             Playwright specs
 docs/            Architecture, ADRs, and per-phase notes
 ```
 
-Read `docs/ARCHITECTURE.md` for the data flow and `docs/adr/` for the decisions behind it. `AUDIT.md` is the review this work follows, and `docs/phase0.md` to `docs/phase4.md` record what changed.
+Read `docs/ARCHITECTURE.md` for the data flow and `docs/adr/` for the decisions behind it. `AUDIT.md` is the review this work follows, and `docs/phase0.md` to `docs/phase5.md` record what changed.
 
 ## Design
 
