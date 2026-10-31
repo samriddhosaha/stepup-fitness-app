@@ -1,8 +1,10 @@
-import { db, getActivePlan, getInstallToken } from '../db/schema'
+import { db, getActivePlan, getActiveProfile, getInstallToken } from '../db/schema'
 import { daysAgoISO, parseISODateLocal, todayISODate } from './format'
 import { isBuiltInExercise } from '../db/exerciseLibrary'
 import { activeWeeksInARow } from './consistency'
 import { isRealPR } from './records'
+import { isEmptyWellbeing } from './wellbeing'
+import { loadWellbeingSummary } from './wellbeingStore'
 import { SKIP_REASONS } from '../../shared/skipReasons'
 import type { WeeklyReviewPayload } from '../../shared/weeklyReviewSchema'
 
@@ -14,8 +16,13 @@ const KNOWN_REASONS = new Set<string>(SKIP_REASONS)
  * Builds exactly the payload the opt-in AI weekly coach sends off-device —
  * last 7 days of training data, summarized, nothing else. Kept as its own
  * function so it's easy to audit what leaves the device.
+ *
+ * Nutrition, recovery and water averages are added only when the person turned on the
+ * separate "include nutrition and recovery" option; otherwise the `wellbeing` key is absent.
  */
-export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
+export async function buildWeeklyReviewPayload(
+  opts: { focus?: NonNullable<WeeklyReviewPayload['focus']> } = {},
+): Promise<WeeklyReviewPayload> {
   const plan = await getActivePlan()
   const weekAgo = daysAgoISO(7)
 
@@ -86,7 +93,7 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
   const bodyWeightTrendKg =
     sorted.length >= 2 && firstReading && lastReading ? { start: firstReading.bodyWeightKg, end: lastReading.bodyWeightKg } : null
 
-  return {
+  const payload: WeeklyReviewPayload = {
     sessionsCompleted: completed.length,
     sessionsPlanned: plan?.sessions.length ?? completed.length,
     exercises,
@@ -95,6 +102,14 @@ export async function buildWeeklyReviewPayload(): Promise<WeeklyReviewPayload> {
     activeWeeksInARow: activeWeeksInARow(await db.workoutSessions.toArray(), todayISODate()),
     bodyWeightTrendKg,
   }
+  if (opts.focus === 'next-week') payload.focus = 'next-week'
+
+  const profile = await getActiveProfile()
+  if (profile?.aiCoachIncludeHealth) {
+    const wellbeing = await loadWellbeingSummary()
+    if (!isEmptyWellbeing(wellbeing)) payload.wellbeing = wellbeing
+  }
+  return payload
 }
 
 export const AI_REQUEST_TIMEOUT_MS = 8000

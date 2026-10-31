@@ -23,7 +23,7 @@ const profile: Profile = {
   nutritionGoal: 'lose',
   calorieTargetKcal: 2200,
   proteinTargetG: 150,
-  aiCoachSource: 'own-key',
+  aiCoachIncludeHealth: true,
 }
 
 async function wipe() {
@@ -71,7 +71,7 @@ describe('backup carries daily-health and nutrition data', () => {
       nutritionGoal: 'lose',
       calorieTargetKcal: 2200,
       proteinTargetG: 150,
-      aiCoachSource: 'own-key',
+      aiCoachIncludeHealth: true,
     })
   })
 
@@ -132,11 +132,11 @@ describe('backup carries daily-health and nutrition data', () => {
     expect(await db.waterLogs.count()).toBe(2)
   })
 
-  it('never exports settings, which is where the optional API key lives', async () => {
-    await setSetting('byokGeminiKey', 'AIzaFAKE-key-for-tests-1234567890')
+  it('never exports the settings table (install token, reminder bookkeeping)', async () => {
+    await setSetting('installToken', 'secret-install-token-for-tests')
     await seed()
     const text = JSON.stringify(await buildBackup())
-    expect(text).not.toContain('AIzaFAKE')
+    expect(text).not.toContain('secret-install-token-for-tests')
     expect(Object.keys((await buildBackup()).tables)).not.toContain('settings')
   })
 })

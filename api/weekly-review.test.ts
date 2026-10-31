@@ -154,6 +154,46 @@ describe('/api/weekly-review', () => {
   })
 })
 
+describe('/api/weekly-review: next-week focus and the opt-in wellbeing summary', () => {
+  const wellbeing = {
+    nutrition: { daysLogged: 5, avgProteinG: 128, avgCalories: 2150, proteinTargetG: 140 },
+    recovery: { checkIns: 4, avgSleepHours: 6.8, avgSoreness: 2, avgEnergy: 2.3 },
+    hydration: { daysLogged: 6, avgMl: 2100 },
+  }
+
+  it('uses a different instruction for next-week and the usual one otherwise', async () => {
+    await call()
+    await call({ body: { ...validPayload, focus: 'next-week' }, headers: { 'x-forwarded-for': '5.5.5.5' } })
+    const [review, plan] = generateContent.mock.calls.map((c) => c[0].config.systemInstruction as string)
+    expect(review).toContain('weekly training review')
+    expect(plan).toContain('coming week')
+    expect(plan).not.toBe(review)
+  })
+
+  it('passes the wellbeing averages to the model when present, and not otherwise', async () => {
+    await call({ body: { ...validPayload, wellbeing } })
+    const withIt = generateContent.mock.calls[0]![0].contents as string
+    expect(withIt).toContain('"avgProteinG": 128')
+    expect(withIt).toContain('"avgSleepHours": 6.8')
+
+    await call({ headers: { 'x-forwarded-for': '6.6.6.6' } })
+    expect(generateContent.mock.calls[1]![0].contents as string).not.toContain('wellbeing')
+  })
+
+  it('rejects impossible or extra wellbeing values with 400 (nothing reaches the model)', async () => {
+    const bad = [
+      { ...wellbeing, nutrition: { ...wellbeing.nutrition, avgProteinG: 99999 } },
+      { ...wellbeing, recovery: { ...wellbeing.recovery, avgSoreness: 7 } },
+      { ...wellbeing, hydration: { ...wellbeing.hydration, daysLogged: 12 } },
+      { ...wellbeing, notes: 'free text must not get through' },
+      { ...wellbeing, nutrition: { ...wellbeing.nutrition, foods: ['paneer'] } },
+    ]
+    for (const w of bad) expect((await call({ body: { ...validPayload, wellbeing: w } })).status).toBe(400)
+    expect((await call({ body: { ...validPayload, focus: 'something-else' } })).status).toBe(400)
+    expect(generateContent).not.toHaveBeenCalled()
+  })
+})
+
 describe('cleanReview', () => {
   it('strips quotes, markdown and caps length at a sentence', () => {
     expect(cleanReview('"Quiet week. Rest up!"')).toBe('Quiet week. Rest up.')

@@ -56,7 +56,8 @@ export interface Profile {
   appearance: Appearance
   aiCoachEnabled?: boolean
   /** Where AI requests go. Default 'hosted' (this app's server); 'own-key' goes straight to Google with the user's key. */
-  aiCoachSource?: 'hosted' | 'own-key'
+  /** Opt-in on top of aiCoachEnabled: also send a 7-day nutrition / recovery / hydration summary. */
+  aiCoachIncludeHealth?: boolean
   // --- daily health (v4) and nutrition (v5) settings ---
   /** Daily water goal in ml. When unset the goal is derived from bodyweight. */
   waterGoalMl?: number
@@ -270,7 +271,7 @@ export interface SettingRow {
 }
 
 export interface WeeklyReview {
-  weekKey: string // Monday of the week, YYYY-MM-DD
+  weekKey: string // Monday of the week, YYYY-MM-DD; 'next:<Monday>' holds the plan-next-week text
   payloadHash: string
   text: string
   createdAt: number

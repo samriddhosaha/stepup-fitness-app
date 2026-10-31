@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
 import { generateWeeklyRecap } from '../lib/recap'
 import { buildWeeklyReviewPayload, requestAIWeeklyReview } from '../lib/aiCoach'
-import { canRefreshReview, currentWeekKey, getWeeklyReview } from '../lib/weeklyReview'
+import { canRefreshReview, currentWeekKey, getWeeklyReview, nextWeekKey } from '../lib/weeklyReview'
 import { Button, Card, Skeleton } from './ui'
 
 /**
@@ -14,10 +14,13 @@ import { Button, Card, Skeleton } from './ui'
 export function WeeklyReviewCard({ aiEnabled }: { aiEnabled: boolean }) {
   const completedCount = useLiveQuery(() => db.workoutSessions.where('completedAt').above(0).count(), [])
   const cached = useLiveQuery(() => db.weeklyReviews.get(currentWeekKey()), [])
+  const cachedPlan = useLiveQuery(() => db.weeklyReviews.get(nextWeekKey()), [])
   const [recap, setRecap] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [planLoading, setPlanLoading] = useState(false)
+  const [planFailed, setPlanFailed] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -47,6 +50,23 @@ export function WeeklyReviewCard({ aiEnabled }: { aiEnabled: boolean }) {
     }
   }
 
+  async function loadPlan(force: boolean) {
+    setPlanLoading(true)
+    setPlanFailed(false)
+    try {
+      await getWeeklyReview({
+        buildPayload: () => buildWeeklyReviewPayload({ focus: 'next-week' }),
+        fetchReview: requestAIWeeklyReview,
+        force,
+        weekKey: nextWeekKey(),
+      })
+    } catch {
+      setPlanFailed(true)
+    } finally {
+      setPlanLoading(false)
+    }
+  }
+
   function toggle() {
     const next = !open
     setOpen(next)
@@ -56,6 +76,7 @@ export function WeeklyReviewCard({ aiEnabled }: { aiEnabled: boolean }) {
   if (!recap && !aiEnabled) return null
 
   const canRefresh = canRefreshReview(cached)
+  const canRefreshPlan = canRefreshReview(cachedPlan)
 
   return (
     <Card>
@@ -96,6 +117,28 @@ export function WeeklyReviewCard({ aiEnabled }: { aiEnabled: boolean }) {
                   The AI review isn’t available right now, so your local recap above is all you’ll see.
                 </p>
               )}
+
+              <div className="mt-4 pt-4 border-t border-dotted border-hairline">
+                {cachedPlan ? (
+                  <>
+                    <p className="label-eyebrow text-faint mb-1">Next week</p>
+                    <p className="text-sm">{cachedPlan.text}</p>
+                    <div className="flex items-center gap-3 mt-3">
+                      <Button variant="ghost" onClick={() => loadPlan(true)} disabled={!canRefreshPlan || planLoading}>
+                        {planLoading ? 'Refreshing…' : 'Refresh'}
+                      </Button>
+                      {!canRefreshPlan && <span className="text-xs text-faint">Updated recently. Refresh opens up later.</span>}
+                    </div>
+                  </>
+                ) : (
+                  <Button variant="secondary" onClick={() => loadPlan(false)} loading={planLoading}>
+                    {planLoading ? 'Planning…' : 'Plan next week'}
+                  </Button>
+                )}
+                {planFailed && (
+                  <p className="text-xs text-faint mt-2">A plan for next week isn’t available right now. Your plan above is unchanged.</p>
+                )}
+              </div>
             </div>
           )}
         </div>

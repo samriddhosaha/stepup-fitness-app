@@ -27,6 +27,9 @@ import type { WeeklyReviewPayload } from '../lib/aiCoach'
 const AI_COACH_CONSENT_COPY =
   'Your last 7 days of workout data (exercises, sets, skips and their reasons, personal bests and your body-weight trend) is sent to this app’s server, which passes it to Google’s Gemini API to write the review. StepUp doesn’t store it. Google and the hosting provider process it under their own policies. You can turn this off at any time.'
 
+const AI_COACH_HEALTH_CONSENT_COPY =
+  'On top of your training data, this adds averages from the last 7 days: protein and calories (and your protein target), sleep, soreness and energy from your check-ins, and daily water. Food names, habit names and anything you typed are never included. It goes the same way (this app’s server, then Google’s Gemini API), is not stored by StepUp, and you can switch it off at any time. You can see exactly what will be sent with “Preview what will be sent”.'
+
 type ImportState =
   | { step: 'idle' }
   | { step: 'confirm'; backup: import('../lib/backup').Backup; summary: import('../lib/backup').BackupSummary }
@@ -43,6 +46,7 @@ export default function Profile() {
   const [importState, setImportState] = useState<ImportState>({ step: 'idle' })
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [confirmingAICoach, setConfirmingAICoach] = useState(false)
+  const [confirmingHealth, setConfirmingHealth] = useState(false)
   const [preview, setPreview] = useState<WeeklyReviewPayload | null>(null)
   const [persisted, setPersisted] = useState<boolean | undefined>(undefined)
   const [logOn, setLogOn] = useState(false)
@@ -65,9 +69,17 @@ export default function Profile() {
   }
 
   async function setAICoachEnabled(enabled: boolean) {
-    await db.profile.update(activeProfile.id!, { aiCoachEnabled: enabled })
+    // Turning the coach off also drops the extra health option, so turning it back on later
+    // never sends more than the person agreed to in that dialog.
+    await db.profile.update(activeProfile.id!, { aiCoachEnabled: enabled, ...(enabled ? {} : { aiCoachIncludeHealth: undefined }) })
     setConfirmingAICoach(false)
     if (!enabled) setPreview(null)
+  }
+
+  async function setIncludeHealth(include: boolean) {
+    await db.profile.update(activeProfile.id!, { aiCoachIncludeHealth: include ? true : undefined })
+    setConfirmingHealth(false)
+    if (preview) setPreview(await buildWeeklyReviewPayload()) // keep the preview honest
   }
 
   async function handleExport() {
@@ -194,6 +206,21 @@ export default function Profile() {
           <p className="text-sm text-faint mt-2">
             Sends your last 7 days of training data to generate a written review. Off by default.
           </p>
+          {activeProfile.aiCoachEnabled && (
+            <div className="mt-4 pt-4 border-t border-dotted border-hairline">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm font-semibold">Include nutrition and recovery</span>
+                <Switch
+                  label="Include nutrition and recovery in the AI coach"
+                  checked={Boolean(activeProfile.aiCoachIncludeHealth)}
+                  onChange={() => (activeProfile.aiCoachIncludeHealth ? void setIncludeHealth(false) : setConfirmingHealth(true))}
+                />
+              </div>
+              <p className="text-sm text-faint mt-2">
+                Adds 7-day averages of protein, calories, sleep and water so the review can mention them. Off by default.
+              </p>
+            </div>
+          )}
           {(confirmingAICoach || activeProfile.aiCoachEnabled) && (
             <div className="mt-3">
               <Button variant="ghost" onClick={showPreview}>
@@ -216,6 +243,14 @@ export default function Profile() {
             confirmLabel="Turn on"
             onConfirm={() => setAICoachEnabled(true)}
             onCancel={() => setConfirmingAICoach(false)}
+          />
+          <ConfirmDialog
+            open={confirmingHealth}
+            title="Include nutrition and recovery?"
+            body={AI_COACH_HEALTH_CONSENT_COPY}
+            confirmLabel="Include"
+            onConfirm={() => void setIncludeHealth(true)}
+            onCancel={() => setConfirmingHealth(false)}
           />
         </Card>
 

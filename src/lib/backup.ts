@@ -69,7 +69,7 @@ const profile = z.object({
   weightUnit: z.enum(['kg', 'lb']),
   appearance: z.enum(['light', 'dark', 'system']),
   aiCoachEnabled: z.boolean().optional(),
-  aiCoachSource: z.enum(['hosted', 'own-key']).optional(),
+  aiCoachIncludeHealth: z.boolean().optional(),
   waterGoalMl: num.min(0).max(20000).optional(),
   waterReminderHours: num.min(0).max(24).optional(),
   activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'very-active']).optional(),

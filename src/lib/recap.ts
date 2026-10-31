@@ -2,6 +2,7 @@ import { db } from '../db/schema'
 import { getActivePlan, getActiveProfile } from '../db/schema'
 import { getExerciseById, getSubstitutes } from '../db/exerciseLibrary'
 import { daysAgoISO, parseISODateLocal } from './format'
+import { loadWellbeingSummary } from './wellbeingStore'
 
 const SKIP_REASON_LABELS: Record<string, string> = {
   'too-difficult': 'finding it too difficult',
@@ -61,5 +62,19 @@ export async function generateWeeklyRecap(): Promise<string> {
     }
   }
 
-  return sentence + '.'
+  sentence += '.'
+
+  // Local only, and always shown: protein and sleep are the two things worth a quiet mention.
+  const { nutrition, recovery } = await loadWellbeingSummary()
+  if (nutrition) {
+    sentence += ` Protein averaged ${nutrition.avgProteinG} g across ${nutrition.daysLogged} logged day${
+      nutrition.daysLogged === 1 ? '' : 's'
+    }${nutrition.proteinTargetG ? ` (target ${nutrition.proteinTargetG} g)` : ''}.`
+  }
+  if (recovery) {
+    sentence += ` You slept about ${recovery.avgSleepHours} h on the ${recovery.checkIns} night${
+      recovery.checkIns === 1 ? '' : 's'
+    } you checked in.`
+  }
+  return sentence
 }

@@ -8,6 +8,9 @@ export const REFRESH_MS = 6 * 60 * 60 * 1000
 
 export const currentWeekKey = (todayISO = todayISODate()): string => weekStartOfISO(todayISO)
 
+/** Cache key for the "plan next week" text, kept apart from the review so each has its own 6 h floor. */
+export const nextWeekKey = (todayISO = todayISODate()): string => `next:${currentWeekKey(todayISO)}`
+
 export async function hashPayload(payload: WeeklyReviewPayload): Promise<string> {
   const data = new TextEncoder().encode(JSON.stringify(payload))
   const digest = await crypto.subtle.digest('SHA-256', data)

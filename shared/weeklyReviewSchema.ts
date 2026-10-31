@@ -45,6 +45,43 @@ export const weeklyReviewSchema = z
       .object({ start: z.number().min(20).max(500), end: z.number().min(20).max(500) })
       .strict()
       .nullable(),
+    /** What the person asked for. Absent means the usual weekly review. */
+    focus: z.enum(['review', 'next-week']).optional(),
+    /**
+     * Opt-in, separately consented summary of the last 7 days of nutrition, recovery check-ins
+     * and water. Averages only: no food names, no habit names, no free text. Omitted entirely
+     * unless the person turned it on.
+     */
+    wellbeing: z
+      .object({
+        nutrition: z
+          .object({
+            daysLogged: z.number().int().min(1).max(7),
+            avgProteinG: z.number().int().min(0).max(1000),
+            avgCalories: z.number().int().min(0).max(20000),
+            proteinTargetG: z.number().int().min(20).max(400).nullable(),
+          })
+          .strict()
+          .nullable(),
+        recovery: z
+          .object({
+            checkIns: z.number().int().min(1).max(7),
+            avgSleepHours: z.number().min(0).max(24),
+            avgSoreness: z.number().min(1).max(3),
+            avgEnergy: z.number().min(1).max(3),
+          })
+          .strict()
+          .nullable(),
+        hydration: z
+          .object({
+            daysLogged: z.number().int().min(1).max(7),
+            avgMl: z.number().int().min(0).max(20000),
+          })
+          .strict()
+          .nullable(),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
 

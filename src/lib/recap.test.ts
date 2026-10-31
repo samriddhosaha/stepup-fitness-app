@@ -6,6 +6,7 @@ import { weeklyReviewSchema } from '../../shared/weeklyReviewSchema'
 import { daysAgoISO, todayISODate } from './format'
 import type { Plan, WorkoutSession } from '../db/types'
 
+
 const plan: Plan = {
   createdAt: 1,
   volumeUneven: false,
@@ -46,6 +47,9 @@ beforeEach(async () => {
     db.personalRecords.clear(),
     db.progressSnapshots.clear(),
     db.profile.clear(),
+    db.mealLogs.clear(),
+    db.checkIns.clear(),
+    db.waterLogs.clear(),
   ])
   await db.plans.add(plan)
   await db.profile.add({
@@ -92,6 +96,27 @@ describe('generateWeeklyRecap', () => {
   })
 })
 
+describe('generateWeeklyRecap: protein and sleep', () => {
+  it('says nothing about them until something is logged', async () => {
+    await db.workoutSessions.add(done(daysAgoISO(1)))
+    const text = await generateWeeklyRecap()
+    expect(text).not.toMatch(/protein|slept/i)
+  })
+
+  it('mentions the protein average (with the target) and sleep, locally, with no opt-in needed', async () => {
+    await db.workoutSessions.add(done(daysAgoISO(1)))
+    await db.profile.toCollection().modify({ proteinTargetG: 140 }) // no aiCoachIncludeHealth: this never leaves the device
+    await db.mealLogs.bulkAdd([
+      { date: todayISODate(), name: 'a', servings: 1, loggedAt: 1, calories: 500, proteinG: 120, carbsG: 0, fatG: 0 },
+      { date: daysAgoISO(1), name: 'b', servings: 1, loggedAt: 2, calories: 500, proteinG: 100, carbsG: 0, fatG: 0 },
+    ])
+    await db.checkIns.add({ date: todayISODate(), sleepHours: 7, soreness: 1, energy: 3, createdAt: 1 })
+    const text = await generateWeeklyRecap()
+    expect(text).toContain('Protein averaged 110 g across 2 logged days (target 140 g).')
+    expect(text).toContain('You slept about 7 h on the 1 night you checked in.')
+  })
+})
+
 describe('buildWeeklyReviewPayload', () => {
   it('sends exercise IDs (never names) and passes the shared schema', async () => {
     await db.workoutSessions.add(done(daysAgoISO(1), { skips: [{ exerciseId: 'dumbbell-row', reason: 'too-difficult' }] }))
@@ -119,6 +144,38 @@ describe('buildWeeklyReviewPayload', () => {
     const payload = await buildWeeklyReviewPayload()
     expect(payload.prs).toEqual([])
     expect(payload.bodyWeightTrendKg).toBeNull()
+  })
+
+  it('never includes the nutrition / recovery summary unless the person opted in', async () => {
+    await db.mealLogs.add({ date: todayISODate(), name: 'Paneer', servings: 1, loggedAt: 1, calories: 265, proteinG: 18, carbsG: 1, fatG: 21 })
+    await db.checkIns.add({ date: todayISODate(), sleepHours: 7, soreness: 1, energy: 3, createdAt: 1 })
+    const payload = await buildWeeklyReviewPayload()
+    expect('wellbeing' in payload).toBe(false)
+    expect(JSON.stringify(payload)).not.toMatch(/Paneer|sleep|protein/i)
+  })
+
+  it('adds averages only (no food names) once they opt in, and it still passes the shared schema', async () => {
+    await db.profile.toCollection().modify({ aiCoachIncludeHealth: true, proteinTargetG: 140 })
+    await db.mealLogs.bulkAdd([
+      { date: todayISODate(), name: 'Paneer curry', servings: 1, loggedAt: 1, calories: 600, proteinG: 40, carbsG: 30, fatG: 30 },
+      { date: daysAgoISO(1), name: 'Dal', servings: 1, loggedAt: 2, calories: 400, proteinG: 20, carbsG: 50, fatG: 8 },
+    ])
+    await db.checkIns.add({ date: todayISODate(), sleepHours: 7, soreness: 2, energy: 3, createdAt: 1 })
+    await db.waterLogs.add({ date: todayISODate(), ml: 1500, loggedAt: 1 })
+    const payload = await buildWeeklyReviewPayload({ focus: 'next-week' })
+    expect(weeklyReviewSchema.safeParse(payload).success).toBe(true)
+    expect(payload.focus).toBe('next-week')
+    expect(payload.wellbeing).toEqual({
+      nutrition: { daysLogged: 2, avgProteinG: 30, avgCalories: 500, proteinTargetG: 140 },
+      recovery: { checkIns: 1, avgSleepHours: 7, avgSoreness: 2, avgEnergy: 3 },
+      hydration: { daysLogged: 1, avgMl: 1500 },
+    })
+    expect(JSON.stringify(payload)).not.toMatch(/Paneer|Dal/)
+  })
+
+  it('omits the section entirely when they opted in but have logged nothing', async () => {
+    await db.profile.toCollection().modify({ aiCoachIncludeHealth: true })
+    expect('wellbeing' in (await buildWeeklyReviewPayload())).toBe(false)
   })
 
   it('maps unknown skip reasons to "unspecified" so a damaged row can’t fail validation', async () => {
