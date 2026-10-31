@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { db, getActivePlan } from '../db/schema'
 import { isTodayScheduledAndIncomplete } from './consistency'
 import { runReminderChecks } from './notifications'
+import { waterReminderInput } from './healthStore'
 import { daysAgoISO, todayISODate, weekdayIndexOfISO } from './format'
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000
@@ -32,6 +33,7 @@ export async function runChecks() {
       weekdayIndexOfISO(todayISODate()),
     ),
     yesterdayScheduledAndMissed,
+    water: await waterReminderInput(),
   })
 }
 

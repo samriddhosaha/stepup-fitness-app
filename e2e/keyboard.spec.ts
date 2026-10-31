@@ -39,7 +39,7 @@ test('every control on the dashboard is reachable by Tab, with no trap', async (
     last = id
     expect(repeats, `keyboard trap on ${id}`).toBeLessThan(3)
   }
-  for (const name of ['Home', 'Plan', 'Progress', 'History', 'Profile']) {
+  for (const name of ['Home', 'Plan', 'Log', 'Progress', 'Profile']) {
     expect([...reached].some((r) => r.includes(name)), `${name} reachable`).toBe(true)
   }
 })

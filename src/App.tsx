@@ -20,6 +20,7 @@ import NotFound from './routes/NotFound'
 const Onboarding = lazy(() => import('./routes/Onboarding'))
 const PlanReady = lazy(() => import('./routes/PlanReady'))
 const Plan = lazy(() => import('./routes/Plan'))
+const Log = lazy(() => import('./routes/Log'))
 const ProgressXP = lazy(() => import('./routes/ProgressXP'))
 const History = lazy(() => import('./routes/History'))
 const Profile = lazy(() => import('./routes/Profile'))
@@ -164,6 +165,7 @@ export default function App() {
           >
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/plan" element={<Plan />} />
+            <Route path="/log" element={<Log />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/progress/xp" element={<ProgressXP />} />
             <Route path="/history" element={<History />} />

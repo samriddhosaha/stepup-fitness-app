@@ -1,15 +1,20 @@
 import type { ReactNode } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Dumbbell, LineChart, CalendarDays, UserRound } from 'lucide-react'
+import { Link, Outlet, useLocation } from 'react-router-dom'
+import { LayoutDashboard, Dumbbell, LineChart, ClipboardList, UserRound } from 'lucide-react'
 import { useReminderChecks } from '../lib/useReminderChecks'
 
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
-  { to: '/plan', label: 'Plan', icon: Dumbbell },
-  { to: '/progress', label: 'Progress', icon: LineChart },
-  { to: '/history', label: 'History', icon: CalendarDays },
-  { to: '/profile', label: 'Profile', icon: UserRound },
+  { to: '/dashboard', label: 'Home', icon: LayoutDashboard, also: [] as string[] },
+  { to: '/plan', label: 'Plan', icon: Dumbbell, also: [] as string[] },
+  { to: '/log', label: 'Log', icon: ClipboardList, also: [] as string[] },
+  // History is part of Progress (tabs inside), so it keeps this item lit too.
+  { to: '/progress', label: 'Progress', icon: LineChart, also: ['/history'] },
+  { to: '/profile', label: 'Profile', icon: UserRound, also: [] as string[] },
 ]
+
+function isActivePath(pathname: string, item: { to: string; also: string[] }): boolean {
+  return [item.to, ...item.also].some((base) => pathname === base || pathname.startsWith(`${base}/`))
+}
 
 function SkipLink() {
   return (
@@ -24,6 +29,7 @@ function SkipLink() {
 
 export function AppShell() {
   useReminderChecks()
+  const { pathname } = useLocation()
 
   return (
     <div className="min-h-dvh flex flex-col md:flex-row bg-canvas">
@@ -36,21 +42,24 @@ export function AppShell() {
         </div>
         <nav aria-label="Primary" className="flex-1">
           <ul className="py-4">
-            {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-              <li key={to} className="px-3">
-                <NavLink
-                  to={to}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-3 mb-1 rounded-lg text-sm font-semibold border ${
+            {NAV_ITEMS.map((item) => {
+              const { to, label, icon: Icon } = item
+              const isActive = isActivePath(pathname, item)
+              return (
+                <li key={to} className="px-3">
+                  <Link
+                    to={to}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex items-center gap-3 px-3 py-3 mb-1 rounded-lg text-sm font-semibold border ${
                       isActive ? 'bg-accent text-on-accent border-line' : 'border-transparent text-ink hover:border-line'
-                    }`
-                  }
-                >
-                  <Icon size={20} strokeWidth={2.25} aria-hidden="true" />
-                  {label}
-                </NavLink>
-              </li>
-            ))}
+                    }`}
+                  >
+                    <Icon size={20} strokeWidth={2.25} aria-hidden="true" />
+                    {label}
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         </nav>
       </aside>
@@ -70,21 +79,24 @@ export function AppShell() {
         aria-label="Primary"
       >
         <ul className="flex justify-between px-2 py-2">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-            <li key={to} className="flex-1">
-              <NavLink
-                to={to}
-                className={({ isActive }) =>
-                  `flex flex-col items-center gap-1 min-h-12 justify-center mx-1 py-1.5 rounded-lg text-xs font-semibold border ${
+          {NAV_ITEMS.map((item) => {
+            const { to, label, icon: Icon } = item
+            const isActive = isActivePath(pathname, item)
+            return (
+              <li key={to} className="flex-1">
+                <Link
+                  to={to}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex flex-col items-center gap-1 min-h-12 justify-center mx-1 py-1.5 rounded-lg text-xs font-semibold border ${
                     isActive ? 'bg-accent text-on-accent border-line' : 'border-transparent text-faint'
-                  }`
-                }
-              >
-                <Icon size={22} strokeWidth={2} aria-hidden="true" />
-                {label}
-              </NavLink>
-            </li>
-          ))}
+                  }`}
+                >
+                  <Icon size={22} strokeWidth={2} aria-hidden="true" />
+                  {label}
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       </nav>
     </div>

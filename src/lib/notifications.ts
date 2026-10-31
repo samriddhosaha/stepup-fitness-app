@@ -1,3 +1,5 @@
+import { shouldRemindWater } from './health'
+
 export function notificationsSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window
 }
@@ -40,6 +42,15 @@ function markNotifiedToday(key: string): void {
 export async function runReminderChecks(params: {
   todayScheduledAndIncomplete: boolean
   yesterdayScheduledAndMissed: boolean
+  /** Present only when the user turned water reminders on. */
+  water?: {
+    intervalHours: number
+    intakeMl: number
+    goalMl: number
+    lastLogAt?: number
+    lastRemindedAt?: number
+    onReminded: (at: number) => void | Promise<void>
+  }
 }): Promise<void> {
   if (!notificationsSupported() || Notification.permission !== 'granted') return
 
@@ -60,5 +71,12 @@ export async function runReminderChecks(params: {
   ) {
     markNotifiedToday('stepup-notified-today')
     await notify('A session is scheduled today', 'Whenever you are ready. Skipping today is fine too.')
+  }
+
+  const { water } = params
+  const now = Date.now()
+  if (water && shouldRemindWater({ ...water, now, hour })) {
+    await water.onReminded(now)
+    await notify('A glass of water?', 'A small drink now keeps you on track. Tap to log it.')
   }
 }

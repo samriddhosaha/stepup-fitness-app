@@ -49,6 +49,23 @@ export function weekStartOfISO(iso: string): string {
   return toISODate(d)
 }
 
+/** Whole calendar days from one date-only string to another (negative if `toISO` is earlier). DST-proof. */
+export function daysBetween(fromISO: string, toISO: string): number {
+  const [fy, fm, fd] = fromISO.split('-').map(Number)
+  const [ty, tm, td] = toISO.split('-').map(Number)
+  return Math.round((Date.UTC(ty!, tm! - 1, td!) - Date.UTC(fy!, fm! - 1, fd!)) / 86_400_000)
+}
+
+/** `count` dates ending at `todayISO`, NEWEST first (today, yesterday, ...). */
+export function lastNDays(todayISO: string, count: number): string[] {
+  const start = parseISODateLocal(todayISO)
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(start)
+    d.setDate(start.getDate() - i)
+    return toISODate(d)
+  })
+}
+
 export function daysAgoISO(days: number): string {
   const d = new Date()
   d.setDate(d.getDate() - days)

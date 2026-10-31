@@ -18,6 +18,7 @@ import { bodyWeightRangeForUnit, rangeErrorMessage } from '../lib/validation'
 import { Button, Card, PageSkeleton } from '../components/ui'
 import { NumberField, Select } from '../components/forms'
 import { useToast } from '../components/toastContext'
+import { ProgressTabs } from '../components/ProgressTabs'
 import { TrendLineChart, VolumeBarChart } from '../components/Charts'
 import type { PersonalRecord, WeightUnit } from '../db/types'
 
@@ -229,7 +230,8 @@ export default function Progress() {
 
   return (
     <div>
-      <h1 className="font-display font-semibold text-3xl md:text-4xl mb-6">Progress</h1>
+      <h1 className="font-display font-semibold text-3xl md:text-4xl mb-4">Progress</h1>
+      <ProgressTabs />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         <BodyWeightCard unit={unit} />

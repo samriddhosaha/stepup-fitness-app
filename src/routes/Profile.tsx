@@ -17,6 +17,7 @@ import { Button, Card, Switch } from '../components/ui'
 import { SegmentedControl } from '../components/forms'
 import { ConfirmDialog } from '../components/overlays'
 import { InstallCard } from '../components/InstallCard'
+import { HydrationSettings } from '../features/health/HydrationSettings'
 import { clearErrorLog, errorLogToText, isErrorLogEnabled, readErrorLog, setErrorLogEnabled } from '../lib/errorLog'
 import { deliverFile } from '../lib/files'
 import { APPEARANCE_OPTIONS, UNIT_OPTIONS, withLabel } from '../lib/options'
@@ -296,6 +297,8 @@ export default function Profile() {
             </p>
           )}
         </Card>
+
+        <HydrationSettings profile={activeProfile} />
 
         <InstallCard />
 

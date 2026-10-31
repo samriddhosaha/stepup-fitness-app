@@ -12,6 +12,9 @@ import { greetingForNow, todayISODate } from '../lib/format'
 import { Button, Card, PageSkeleton, WeekDots } from '../components/ui'
 import { WeeklyReviewCard } from '../components/WeeklyReviewCard'
 import { useStartWorkout } from '../components/StartWorkout'
+import { CheckInCard } from '../features/health/CheckInCard'
+import { HabitsCard } from '../features/health/HabitsCard'
+import { WaterCard } from '../features/health/WaterCard'
 import type { PlanSession } from '../db/types'
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
@@ -113,6 +116,8 @@ export default function Dashboard() {
             )}
           </Card>
 
+          <CheckInCard variant="home" />
+
           {easyWeek && (
             <Card className="bg-accent-soft">
               <p className="label-eyebrow text-faint mb-1">A thought for this week</p>
@@ -145,6 +150,9 @@ export default function Dashboard() {
             <p className="label-eyebrow text-faint mb-3">This week</p>
             <WeekDots done={doneThisWeek} planned={activePlan.sessions.length} />
           </Card>
+
+          <WaterCard compact />
+          <HabitsCard compact />
 
           {latestPR && (
             <Card className="bg-accent-soft">

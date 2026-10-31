@@ -5,6 +5,7 @@ import { db, getActivePlan } from '../db/schema'
 import { parseISODateLocal, toISODate, todayISODate, weekdayIndexOfISO } from '../lib/format'
 import { useUnit } from '../lib/useUnit'
 import { Card, PageSkeleton } from '../components/ui'
+import { ProgressTabs } from '../components/ProgressTabs'
 import { DayDetail } from '../features/history/DayDetail'
 
 type DayStatus = 'completed' | 'not-done' | 'scheduled' | 'rest'
@@ -63,6 +64,7 @@ export default function History() {
   return (
     <div className="md:flex md:gap-10 md:items-start">
       <div className="md:max-w-md md:shrink-0 md:w-full">
+        <ProgressTabs />
         <div className="flex items-center justify-between mb-6">
           <button
             aria-label="Previous month"
