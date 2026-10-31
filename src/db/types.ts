@@ -178,8 +178,6 @@ export interface LoggedExercise {
   exerciseId: string
   sets: LoggedSet[]
   swappedFromExerciseId?: string
-  /** Exercises sharing a label were done as a superset in this workout. */
-  supersetGroup?: string
 }
 
 export interface SkipEvent {
@@ -210,10 +208,6 @@ export interface WorkoutSession {
   restEndsAt?: number
   /** Weekday (0 = Mon) this session was scheduled for when it started. */
   plannedDayIndex?: number
-  /** A free-text note about the whole workout. */
-  notes?: string
-  /** Index i is in this list when exercise i is supersetted with exercise i + 1 (positions in `exerciseOrder`). */
-  supersetLinks?: number[]
 }
 
 export interface ProgressSnapshot {

@@ -2,21 +2,16 @@ import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
-import type { PersonalRecord, WeightUnit } from '../db/types'
+import type { PersonalRecord } from '../db/types'
 import { getExerciseById } from '../db/exerciseLibrary'
-import { formatDuration } from '../lib/format'
-import { formatWeight } from '../lib/units'
+import { formatDuration, todayISODate } from '../lib/format'
+import { activeWeeksInARow } from '../lib/consistency'
+import { prLabel } from '../lib/prLabel'
 import { useUnit } from '../lib/useUnit'
 import { notificationsSupported, requestNotificationPermission } from '../lib/notifications'
 import { requestPersistentStorage } from '../lib/storage'
 import { Button, Card, PageSkeleton } from '../components/ui'
-
-function prLabel(pr: PersonalRecord, unit: WeightUnit): string {
-  if (pr.kind === 'reps') return `${pr.value} reps`
-  if (pr.kind === 'time') return `${pr.value} s hold`
-  if (pr.kind === 'weight') return `${formatWeight(pr.value, unit)} lifted`
-  return `${formatWeight(pr.value, unit)} est.`
-}
+import { ShareCardPanel } from '../features/workout/ShareCardPanel'
 
 export default function WorkoutComplete() {
   const navigate = useNavigate()
@@ -41,6 +36,7 @@ export default function WorkoutComplete() {
   const completedCount = useLiveQuery(() =>
     db.workoutSessions.filter((s) => Boolean(s.completedAt)).count(),
   )
+  const weeksInARow = useLiveQuery(async () => activeWeeksInARow(await db.workoutSessions.toArray(), todayISODate()), [])
   const [notifDismissed, setNotifDismissed] = useState(false)
   const unit = useUnit()
 
@@ -118,19 +114,11 @@ export default function WorkoutComplete() {
         )}
       </div>
 
-      {typeof navigator !== 'undefined' && 'share' in navigator && (
-        <Button
-          variant="ghost"
-          className="w-full mb-3"
-          onClick={() =>
-            void navigator
-              .share({ title: 'StepUp', text: `${session.planSessionName}: ${totalSets} sets${session.durationSeconds ? `, ${Math.max(1, Math.round(session.durationSeconds / 60))} min` : ''}.` })
-              .catch(() => undefined)
-          }
-        >
-          Share
-        </Button>
-      )}
+      <ShareCardPanel
+        session={session}
+        records={prs ?? []}
+        streakLine={weeksInARow && weeksInARow >= 2 ? `${weeksInARow} weeks in a row` : null}
+      />
       <Button className="w-full" onClick={() => navigate('/dashboard')}>
         Back to dashboard
       </Button>

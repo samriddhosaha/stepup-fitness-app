@@ -49,6 +49,13 @@ export function weekStartOfISO(iso: string): string {
   return toISODate(d)
 }
 
+/** The date-only string `days` days after (or before, if negative) the given one. DST-proof. */
+export function addDaysISO(iso: string, days: number): string {
+  const d = parseISODateLocal(iso)
+  d.setDate(d.getDate() + days)
+  return toISODate(d)
+}
+
 /** Whole calendar days from one date-only string to another (negative if `toISO` is earlier). DST-proof. */
 export function daysBetween(fromISO: string, toISO: string): number {
   const [fy, fm, fd] = fromISO.split('-').map(Number)

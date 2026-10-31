@@ -19,6 +19,7 @@ import { Button, Card, PageSkeleton } from '../components/ui'
 import { NumberField, Select } from '../components/forms'
 import { useToast } from '../components/toastContext'
 import { ProgressTabs } from '../components/ProgressTabs'
+import { TrainingHeatmap } from '../features/progress/TrainingHeatmap'
 import { TrendLineChart, VolumeBarChart } from '../components/Charts'
 import type { PersonalRecord, WeightUnit } from '../db/types'
 
@@ -245,6 +246,8 @@ export default function Progress() {
             emptyLabel="Complete a few workouts to see your weekly volume."
           />
         </Card>
+
+        <TrainingHeatmap />
 
         <MuscleCard />
 

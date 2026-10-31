@@ -106,7 +106,6 @@ const workoutSession = z.object({
         exerciseId: z.string().min(1),
         sets: z.array(loggedSet).max(200),
         swappedFromExerciseId: z.string().optional(),
-        supersetGroup: z.string().max(40).optional(),
       }),
     )
     .max(100),
@@ -121,8 +120,6 @@ const workoutSession = z.object({
   currentIndex: z.number().int().min(0).optional(),
   restEndsAt: num.optional(),
   plannedDayIndex: z.number().int().min(0).max(6).optional(),
-  notes: z.string().max(5000).optional(),
-  supersetLinks: z.array(z.number().int().min(0).max(100)).max(100).optional(),
 })
 const progressSnapshot = z.object({ id, date: isoDate, bodyWeightKg: num.min(0).max(1000) })
 const personalRecord = z.object({

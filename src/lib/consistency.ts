@@ -29,6 +29,24 @@ export function activeWeeksInARow(sessions: WorkoutSession[], todayISO: string):
   return count
 }
 
+/**
+ * The longest run of active weeks there has ever been, using the same rule as the current one: a
+ * single empty week is forgiven, two in a row end the run. Counts the active weeks in the run.
+ */
+export function bestWeeksInARow(sessions: WorkoutSession[]): number {
+  const weeks = [...new Set(sessions.filter((s) => s.completedAt).map((s) => weekStartOfISO(s.date)))].sort()
+  let best = 0
+  let run = 0
+  let previous: string | undefined
+  for (const week of weeks) {
+    const gapWeeks = previous === undefined ? 0 : Math.round((parseISODateLocal(week).getTime() - parseISODateLocal(previous).getTime()) / (7 * 86_400_000))
+    run = previous !== undefined && gapWeeks <= 2 ? run + 1 : 1 // gap 1 = consecutive, 2 = one empty week
+    best = Math.max(best, run)
+    previous = week
+  }
+  return best
+}
+
 export function completedThisWeek(sessions: WorkoutSession[], todayISO: string): number {
   const start = weekStartOfISO(todayISO)
   return sessions.filter((s) => s.completedAt && s.date >= start).length

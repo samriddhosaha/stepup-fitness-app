@@ -75,25 +75,6 @@ describe('backup carries daily-health and nutrition data', () => {
     })
   })
 
-  it('keeps workout notes and superset links on a session', async () => {
-    await db.workoutSessions.add({
-      date: '2026-10-31',
-      planSessionName: 'A',
-      startedAt: 1,
-      completedAt: 2,
-      skips: [],
-      notes: 'felt strong',
-      supersetLinks: [0],
-      exercises: [{ exerciseId: 'goblet-squat', supersetGroup: 'superset-1', sets: [{ setIndex: 0, weightKg: 20, reps: 8 }] }],
-    })
-    const parsed = parseBackup(JSON.stringify(await buildBackup()))
-    if (!parsed.ok) throw new Error(parsed.error)
-    const s = parsed.backup.tables.workoutSessions[0]
-    expect(s?.notes).toBe('felt strong')
-    expect(s?.supersetLinks).toEqual([0])
-    expect(s?.exercises[0]?.supersetGroup).toBe('superset-1')
-  })
-
   it('still restores a backup made before these tables existed', () => {
     const v3 = {
       version: 3,

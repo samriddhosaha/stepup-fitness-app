@@ -30,6 +30,7 @@ import { RestTimer } from '../components/RestTimer'
 import { useToast } from '../components/toastContext'
 import { SetForm } from '../features/workout/SetForm'
 import { LoggedSets } from '../features/workout/LoggedSets'
+import { PlateCalculator } from '../features/workout/PlateCalculator'
 import { WorkoutDialogs } from '../features/workout/WorkoutDialogs'
 import { type WorkoutPanel } from '../features/workout/constants'
 import {
@@ -72,6 +73,7 @@ export default function WorkoutActive() {
   const [calibration, setCalibration] = useState<{ hintKg?: number } | undefined>()
   const [lastTime, setLastTime] = useState<LoggedSet[] | undefined>()
   const [announce, setAnnounce] = useState('')
+  const [platesOpen, setPlatesOpen] = useState(false)
   const [painFor, setPainFor] = useState<string | null>(null)
   const logging = useRef(false)
   // Set while finishing: once the session closes the live query goes null, and we must head to the summary, not the dashboard.
@@ -379,6 +381,25 @@ export default function WorkoutActive() {
           Skip
         </Button>
       </div>
+
+      {currentExercise.kit === 'barbell' && showWeight && (
+        <div className="mb-4">
+          <Button
+            variant="secondary"
+            className="w-full"
+            aria-expanded={platesOpen}
+            aria-controls="plate-calculator"
+            onClick={() => setPlatesOpen((open) => !open)}
+          >
+            {platesOpen ? 'Hide plate calculator' : 'Plates for this weight'}
+          </Button>
+          {platesOpen && (
+            <div id="plate-calculator" className="mt-3">
+              <PlateCalculator target={form.weight.trim() !== '' && Number(form.weight) > 0 ? Number(form.weight) : null} unit={unit} />
+            </div>
+          )}
+        </div>
+      )}
 
       <LoggedSets sets={loggedSets} unit={unit} tracking={tracking} editingIndex={editing} onEdit={startEdit} onDelete={handleDelete} />
 

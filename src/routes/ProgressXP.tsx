@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { db } from '../db/schema'
 import { getLevelProgress, getTotalXP } from '../lib/xp'
 import { Card } from '../components/ui'
+import { MilestonesCard } from '../features/progress/MilestonesCard'
 
 const XP_LABELS: Record<string, string> = {
   set: 'Set completed',
@@ -30,7 +31,7 @@ export default function ProgressXP() {
 
       <h1 className="sr-only">XP and level</h1>
       <div className="md:grid md:grid-cols-3 md:gap-8 mt-6 space-y-6 md:space-y-0">
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 space-y-6">
           <Card>
             <p className="label-eyebrow text-faint mb-1">{progress.rank}</p>
             <p className="font-display font-semibold text-3xl mb-3">Level {progress.level}</p>
@@ -41,6 +42,7 @@ export default function ProgressXP() {
               {progress.xpIntoLevel} / {progress.xpForNextLevel} XP to next level
             </p>
           </Card>
+          <MilestonesCard />
         </div>
 
         <div className="md:col-span-2">
