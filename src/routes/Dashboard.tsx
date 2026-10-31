@@ -15,6 +15,7 @@ import { useStartWorkout } from '../components/StartWorkout'
 import { CheckInCard } from '../features/health/CheckInCard'
 import { HabitsCard } from '../features/health/HabitsCard'
 import { WaterCard } from '../features/health/WaterCard'
+import { NutritionSummary } from '../features/nutrition/NutritionSummary'
 import type { PlanSession } from '../db/types'
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
@@ -151,6 +152,7 @@ export default function Dashboard() {
             <WeekDots done={doneThisWeek} planned={activePlan.sessions.length} />
           </Card>
 
+          <NutritionSummary compact />
           <WaterCard compact />
           <HabitsCard compact />
 

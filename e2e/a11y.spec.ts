@@ -42,7 +42,7 @@ for (const theme of ['light', 'dark'] as Theme[]) {
 
     test('app screens, active workout, history and profile', async ({ page }) => {
       await onboard(page)
-      for (const route of ['/dashboard', '/plan', '/progress', '/progress/xp', '/history', '/profile', '/profile/edit', '/guide']) {
+      for (const route of ['/dashboard', '/plan', '/log', '/nutrition', '/progress', '/progress/xp', '/history', '/profile', '/profile/edit', '/guide']) {
         await page.goto(route)
         await expect(page.locator('main h1').first()).toBeVisible()
         await expectNoSeriousViolations(page, route)

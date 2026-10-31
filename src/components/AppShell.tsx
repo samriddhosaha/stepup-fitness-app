@@ -6,7 +6,8 @@ import { useReminderChecks } from '../lib/useReminderChecks'
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Home', icon: LayoutDashboard, also: [] as string[] },
   { to: '/plan', label: 'Plan', icon: Dumbbell, also: [] as string[] },
-  { to: '/log', label: 'Log', icon: ClipboardList, also: [] as string[] },
+  // Nutrition is part of the daily log, so it keeps this item lit too.
+  { to: '/log', label: 'Log', icon: ClipboardList, also: ['/nutrition'] },
   // History is part of Progress (tabs inside), so it keeps this item lit too.
   { to: '/progress', label: 'Progress', icon: LineChart, also: ['/history'] },
   { to: '/profile', label: 'Profile', icon: UserRound, also: [] as string[] },
